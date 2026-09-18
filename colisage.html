@@ -1,0 +1,1380 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Contrôle COLISAGE</title>
+<style>
+:root{
+  --bg:#f4f5f7;
+  --panel:#ffffff;
+  --panel-raised:#eaecf0;
+  --border:#c7cdd6;
+  --border-soft:#dde1e7;
+  --text:#12161c;
+  --text-dim:#4a5361;
+  --text-faint:#767f8c;
+  --accent:#a15e00;
+  --accent-dim:#f0dcb8;
+  --on-accent-text:#ffffff;
+  --text-warn:#7a4a00;
+  --bg-warn-tint:rgba(161,94,0,0.10);
+  --text-danger:#8a241a;
+  --bg-danger-tint:rgba(184,52,42,0.12);
+  --bg-danger-tint-soft:rgba(184,52,42,0.10);
+  --text-success:#14602f;
+  --bg-success-tint:rgba(26,122,65,0.10);
+  --c-nonvisite:#1d5fa8;
+  --c-conforme:#1a7a41;
+  --c-nonconforme:#b8342a;
+  --c-inaccessible:#5b6572;
+  --c-nonpresent:#177377;
+  --c-termine:#6a4c9c;
+  --radius:8px;
+  font-size:16px;
+}
+:root[data-theme="dark"]{
+  --bg:#12161c;
+  --panel:#1a2029;
+  --panel-raised:#212a34;
+  --border:#2a323d;
+  --border-soft:#232b35;
+  --text:#edeff2;
+  --text-dim:#8d97a5;
+  --text-faint:#5c6673;
+  --accent:#e3a23c;
+  --accent-dim:#7a5f2e;
+  --on-accent-text:#1a1206;
+  --text-warn:#f0c07c;
+  --bg-warn-tint:rgba(227,162,60,0.14);
+  --text-danger:#f0a99e;
+  --bg-danger-tint:rgba(220,91,74,0.16);
+  --bg-danger-tint-soft:rgba(220,91,74,0.14);
+  --text-success:#a7e0bd;
+  --bg-success-tint:rgba(63,169,104,0.14);
+  --c-nonvisite:#4c86c7;
+  --c-conforme:#3fa968;
+  --c-nonconforme:#dc5b4a;
+  --c-inaccessible:#8a93a0;
+  --c-nonpresent:#3fa3a9;
+  --c-termine:#8b6fc9;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+.mono{font-family:ui-monospace,SFMono-Regular,"Roboto Mono",Menlo,Consolas,monospace;}
+
+#app{min-height:100vh;display:flex;flex-direction:column;padding-bottom:48px;}
+
+/* ---- header ---- */
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 10px;}
+.header-top h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+.header-top .sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.tools-btn{background:var(--panel-raised);border:1px solid var(--border);color:var(--text);
+  width:38px;height:38px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.tools-btn:active{background:var(--border);}
+
+.offline-banner{display:none;background:var(--bg-warn-tint);border-bottom:1px solid var(--accent);
+  color:var(--text-warn);font-size:12px;padding:8px 14px;line-height:1.5;}
+.offline-banner.show{display:block;}
+
+.name-row{display:flex;gap:8px;padding:0 14px 10px;align-items:center;}
+.name-row input, .name-row select{flex:1;background:var(--panel);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--radius);padding:8px 11px;font-size:13.5px;}
+.name-row label{font-size:11.5px;color:var(--text-faint);white-space:nowrap;}
+.page-tabs{display:flex;gap:8px;padding:0 14px 10px;}
+.tab-btn{flex:1;min-height:36px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--panel);color:var(--text-dim);font-size:12.5px;font-weight:500;}
+.tab-btn.active{border-color:var(--accent);background:rgba(161,94,0,0.10);color:var(--text);font-weight:600;}
+
+.stats-row{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;}
+.chip{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:20px;
+  border:1px solid var(--border);background:var(--panel);font-size:11.5px;color:var(--text-dim);white-space:nowrap;}
+.chip .dot{width:7px;height:7px;border-radius:50%;}
+.chip b{color:var(--text);font-weight:600;}
+.chip.active{border-color:var(--accent);background:rgba(227,162,60,0.12);color:var(--text);}
+.chip.warn{border-color:var(--c-nonconforme);}
+.chip.warn.active{background:rgba(220,91,74,0.16);}
+
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px;}
+.filter-row input[type=search]{flex:1 1 100%;min-width:0;background:var(--panel);border:1px solid var(--border);
+  color:var(--text);border-radius:var(--radius);padding:9px 11px;font-size:14px;}
+.filter-row select{flex:1 1 0;min-width:0;background:var(--panel);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--radius);padding:9px 6px;font-size:12.5px;}
+
+/* ---- list ---- */
+main{padding:10px 14px 24px;display:flex;flex-direction:column;gap:8px;}
+.empty{text-align:center;color:var(--text-dim);padding:60px 20px;font-size:14px;line-height:1.6;}
+
+.card{background:var(--panel);border:1px solid var(--border-soft);border-left:4px solid var(--c-nonvisite);
+  border-radius:var(--radius);overflow:hidden;}
+.card-head{padding:11px 12px 9px;display:flex;flex-direction:column;gap:4px;}
+.card-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.card-local{font-size:14.5px;font-weight:600;color:var(--text);line-height:1.3;}
+.card-num{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;}
+.card-sub{font-size:12px;color:var(--text-dim);line-height:1.4;}
+.card-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:4px;background:var(--panel-raised);
+  color:var(--text-dim);border:1px solid var(--border);}
+.badge.service{color:var(--text);border-color:var(--text-faint);}
+.badge.overdue{background:var(--bg-danger-tint);border-color:var(--c-nonconforme);color:var(--text-danger);}
+.badge.soon{background:var(--bg-warn-tint);border-color:var(--accent);color:var(--text-warn);}
+
+.status-row{display:flex;gap:5px;padding:0 12px 11px;flex-wrap:wrap;}
+.status-btn{flex:1 1 auto;min-width:0;min-height:40px;border-radius:6px;border:1px solid var(--border);
+  background:var(--panel-raised);color:var(--text-dim);font-size:12px;font-weight:500;padding:0 8px;
+  display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;}
+.status-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);flex:0 0 auto;}
+.status-btn.on{color:#fff;border-color:transparent;}
+.status-btn.on .dot{background:#fff;}
+
+.reason-box{padding:0 12px 12px;}
+.reason-box textarea{width:100%;min-height:56px;resize:vertical;background:var(--panel-raised);
+  border:1px solid var(--c-nonconforme);border-radius:6px;color:var(--text);padding:8px 9px;
+  font-size:13.5px;font-family:inherit;line-height:1.4;}
+.reason-box textarea::placeholder{color:var(--text-faint);}
+.reason-box select{width:100%;min-height:42px;background:var(--panel-raised);
+  border:1px solid var(--c-nonconforme);border-radius:6px;color:var(--text);padding:8px 9px;
+  font-size:13.5px;font-family:inherit;}
+
+.card-foot{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;
+  border-top:1px solid var(--border-soft);}
+.foot-info{font-size:11px;color:var(--text-faint);}
+.reset-btn{font-size:11.5px;color:var(--text-dim);background:none;border:none;padding:4px 6px;text-decoration:underline;}
+.reset-btn:active{color:var(--text);}
+.expand-btn{font-size:11.5px;color:var(--text-dim);background:none;border:none;padding:4px 6px;}
+
+.details{padding:0 12px 12px;font-size:12.5px;color:var(--text-dim);line-height:1.6;border-top:1px dashed var(--border-soft);margin-top:2px;padding-top:10px;}
+.details div{margin-bottom:3px;}
+.details b{color:var(--text-dim);font-weight:600;}
+
+/* ---- card border colors per status ---- */
+.card[data-status=non_visite]{border-left-color:var(--c-nonvisite);}
+.card[data-status=conforme]{border-left-color:var(--c-conforme);}
+.card[data-status=non_conforme]{border-left-color:var(--c-nonconforme);}
+.card[data-status=inaccessible]{border-left-color:var(--c-inaccessible);}
+.card[data-status=non_present]{border-left-color:var(--c-nonpresent);}
+.card[data-status=termine]{border-left-color:var(--c-termine);}
+
+.status-btn[data-status=non_visite].on{background:var(--c-nonvisite);}
+.status-btn[data-status=conforme].on{background:var(--c-conforme);}
+.status-btn[data-status=non_conforme].on{background:var(--c-nonconforme);}
+.status-btn[data-status=inaccessible].on{background:var(--c-inaccessible);}
+.status-btn[data-status=non_present].on{background:var(--c-nonpresent);}
+.status-btn[data-status=termine].on{background:var(--c-termine);}
+
+/* ---- sort toggle ---- */
+.sort-row{display:flex;gap:8px;padding:0 14px 12px;}
+.sort-btn{flex:1 1 auto;min-height:36px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--panel);color:var(--text-dim);font-size:12.5px;font-weight:500;}
+.sort-btn.active{border-color:var(--accent);background:rgba(227,162,60,0.12);color:var(--text);}
+
+/* ---- modal ---- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:50;display:flex;align-items:flex-end;}
+.overlay.hidden{display:none;}
+.sheet{background:var(--bg);border-top:1px solid var(--border);border-radius:16px 16px 0 0;
+  width:100%;max-height:88vh;overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom));}
+.sheet h2{font-size:15px;margin:0 0 4px;}
+.sheet .close{position:absolute;right:18px;top:14px;background:var(--panel-raised);border:1px solid var(--border);
+  color:var(--text);width:32px;height:32px;border-radius:50%;}
+.sheet-section{margin-top:18px;}
+.sheet-section h3{font-size:12.5px;text-transform:none;color:var(--text-dim);margin:0 0 8px;font-weight:600;}
+.sheet-section p{font-size:12.5px;color:var(--text-faint);line-height:1.6;margin:6px 0 10px;}
+.sheet textarea{width:100%;min-height:110px;background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);padding:10px;font-size:13px;font-family:inherit;}
+.sheet-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.btn{flex:1 1 auto;min-height:42px;border-radius:8px;border:1px solid var(--border);background:var(--panel-raised);
+  color:var(--text);font-size:13.5px;font-weight:500;padding:0 12px;}
+.btn:active{background:var(--border);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent-text);font-weight:600;}
+.btn.danger{color:var(--text-danger);border-color:var(--c-nonconforme);}
+.msg{font-size:12.5px;padding:9px 11px;border-radius:6px;margin-top:8px;display:none;}
+.msg.show{display:block;}
+.msg.ok{background:var(--bg-success-tint);border:1px solid var(--c-conforme);color:var(--text-success);}
+.msg.err{background:var(--bg-danger-tint-soft);border:1px solid var(--c-nonconforme);color:var(--text-danger);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px;}
+.stat-box .n{font-size:20px;font-weight:700;}
+.stat-box .l{font-size:11px;color:var(--text-dim);margin-top:2px;}
+.locaux-row{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:6px;font-size:13px;}
+.locaux-row:active{background:var(--panel-raised);}
+.locaux-row input{width:18px;height:18px;flex:0 0 auto;}
+.locaux-row .name{flex:1;color:var(--text);}
+.locaux-row .count{font-size:11px;color:var(--text-faint);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="offline-banner" id="offlineBanner">Mode autonome : vos modifications restent uniquement dans cet onglet tant qu'il reste ouvert — pas de sauvegarde entre deux ouvertures. Pensez à exporter (⚙) avant de fermer la page.</div>
+    <div class="header-top">
+      <div>
+        <h1 id="appTitle">Contrôle COLISAGE</h1>
+        <div class="sub" id="headerSub">Chargement…</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="tools-btn" data-action="toggle-theme" id="themeToggleBtn" aria-label="Theme">☾</button>
+        <button class="tools-btn" data-action="open-tools" aria-label="Outils">⚙</button>
+      </div>
+    </div>
+    <div class="page-tabs">
+      <button class="tab-btn active" data-action="goto-page" data-page="colisage">Contrôle COLISAGE</button>
+      <button class="tab-btn" data-action="goto-page" data-page="crise">Locaux de crise</button>
+    </div>
+    <div class="name-row">
+      <label for="inspectorName">Contrôlé par</label>
+      <select id="inspectorName"><option value="">Choisir…</option><option value="Jordan IGNACZAK">Jordan IGNACZAK</option><option value="Jordan GIULIANO">Jordan GIULIANO</option><option value="Amélie BREIJO">Amélie BREIJO</option><option value="Ines DONNY">Ines DONNY</option></select>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="filter-row">
+      <input type="search" id="searchInput" placeholder="Rechercher (local, n°, projet…)">
+      <select id="trancheFilter"><option value="">Toutes les tranches</option></select>
+      <select id="weekFilter"><option value="">Toutes les semaines</option></select>
+      <select id="buildingFilter"><option value="">Tous les bâtiments</option></select>
+    </div>
+  </header>
+
+  <main id="list"></main>
+</div>
+
+<div class="overlay hidden" id="toolsOverlay">
+  <div class="sheet" style="position:relative;">
+    <button class="close" data-action="close-tools">✕</button>
+    <h2>Outils</h2>
+    <div class="sub" style="font-size:12px;color:var(--text-dim);">Import, export et remise à zéro</div>
+
+    <div class="sheet-section">
+      <h3>Vue d'ensemble</h3>
+      <div class="stat-grid" id="statGrid"></div>
+    </div>
+
+    <div class="sheet-section">
+      <h3>Locaux affichés cette semaine</h3>
+      <p>Décochez un local pour le masquer de la liste principale (par exemple s'il n'est pas concerné cette semaine). Les cases se souviennent de votre choix.</p>
+      <div class="sheet-btns">
+        <button class="btn" data-action="locaux-check-all">Tout cocher</button>
+        <button class="btn" data-action="locaux-uncheck-all">Tout décocher</button>
+      </div>
+      <div id="locauxList" style="max-height:260px;overflow-y:auto;margin-top:10px;border:1px solid var(--border);border-radius:8px;padding:4px;"></div>
+    </div>
+
+    <div class="sheet-section">
+      <h3>Connexion</h3>
+      <p id="connStatus" style="color:var(--text-dim);">Connexion en cours…</p>
+      <div class="sheet-btns">
+        <button class="btn" data-action="remote-refresh">Actualiser</button>
+      </div>
+      <div class="msg" id="connMsg"></div>
+    </div>
+
+    <div class="sheet-section" style="display:none;">
+      <h3>Alternative sans mode connecté (une copie par personne)</h3>
+      <p>1. Vous exportez l'état actuel (bouton ci-dessus) et l'envoyez à vos collègues, avec ce fichier .html s'ils ne l'ont pas encore.<br>
+      2. Chaque collègue ouvre le fichier, indique son nom en haut, puis colle votre export dans « Importer » pour partir des mêmes données.<br>
+      3. Il fait sa tournée, coche ses statuts — tout reste dans son onglet, sans rien publier.<br>
+      4. Avant de fermer, il exporte à son tour (Copier ou Télécharger) et vous renvoie le résultat.<br>
+      5. Vous collez chaque retour dans « Importer » ci-dessous (un par un), ou vous passez la macro Excel sur chaque fichier reçu : les fiches déjà cochées ne sont jamais écrasées, seules les nouvelles infos s'ajoutent.</p>
+    </div>
+
+    <div class="sheet-section">
+      <h3>Récupérer la semaine (copie sur PC)</h3>
+      <p>Copiez le tableau à jour et collez-le dans Excel, ou téléchargez un fichier à transférer.</p>
+      <div class="sheet-btns">
+        <button class="btn primary" data-action="copy-export">Copier le tableau</button>
+        <button class="btn" data-action="download-export">Télécharger le fichier</button>
+      </div>
+      <div class="msg" id="exportMsg"></div>
+    </div>
+
+    <div class="sheet-section">
+      <h3>Importer une nouvelle semaine</h3>
+      <p>Collez ici les lignes copiées depuis Excel (même en-têtes que votre extraction). Les lignes déjà connues sont mises à jour sans écraser les statuts déjà cochés sur le terrain ; les nouvelles lignes sont ajoutées.</p>
+      <textarea id="importText" placeholder="Collez le tableau Excel ici (avec ou sans ligne d'en-tête)…"></textarea>
+      <div class="sheet-btns">
+        <button class="btn primary" data-action="do-import">Importer / mettre à jour</button>
+      </div>
+      <div class="msg" id="importMsg"></div>
+    </div>
+
+    <div class="sheet-section">
+      <h3>Nettoyage (demandes terminées / expirées)</h3>
+      <p>Retire de la liste active les demandes marquées « Terminé », ou dont la date de fin est dépassée depuis plus de 30 jours. Elles restent dans vos exports Excel précédents — pensez à exporter avant si un doute.</p>
+      <div class="sheet-btns">
+        <button class="btn danger" data-action="archive-old">Archiver les demandes obsolètes</button>
+      </div>
+      <div class="msg" id="archiveMsg"></div>
+    </div>
+
+    <div class="sheet-section">
+      <h3>Supprimer une semaine précise</h3>
+      <p>Choisissez une semaine déjà contrôlée pour supprimer d'un coup toutes les fiches qui lui appartiennent (dernier contrôle enregistré cette semaine-là). Les fiches jamais contrôlées ne sont jamais concernées.</p>
+      <select id="deleteWeekSelect" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 10px;font-size:13px;margin-bottom:8px;"><option value="">Choisir une semaine…</option></select>
+      <div class="sheet-btns">
+        <button class="btn danger" data-action="delete-week">Supprimer cette semaine</button>
+      </div>
+      <div class="msg" id="deleteWeekMsg"></div>
+    </div>
+
+    <div class="sheet-section">
+      <h3>Remise à zéro</h3>
+      <p>Repasse toutes les fiches en « à contrôler », sans supprimer les données. Pensez à exporter avant.</p>
+      <div class="sheet-btns">
+        <button class="btn danger" data-action="reset-all">Réinitialiser tous les statuts</button>
+      </div>
+    </div>
+
+    <div class="sheet-section">
+      <h3 style="color:var(--text-danger);">Zone dangereuse</h3>
+      <p>Supprime absolument toutes les fiches, quelle que soit la semaine. Irréversible. Exportez avant si le moindre doute.</p>
+      <div class="sheet-btns">
+        <button class="btn danger" data-action="delete-all">Tout supprimer</button>
+      </div>
+      <div class="msg" id="deleteAllMsg"></div>
+    </div>
+
+    <div class="sheet-section">
+      <p style="color:var(--text-faint);">Les cases cochées sont enregistrées automatiquement sur cet appareil et restent disponibles à chaque réouverture de cette page. Pour les retrouver sur votre PC, utilisez l'export ci-dessus — il n'y a pas de synchronisation automatique vers un poste relié à votre réseau d'entreprise.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ Données de référence ============ */
+var NON_CONFORME_RAISONS = ["ADR NON VALIDE","DATE DEPASSEE","EVACUATION","EXTINCTEUR",
+  "INDICE COLISAGE","INVENTAIRE","LOCAL","MANQUE AFFICHAGE IND 0","STOCKAGE"];
+
+var STATUS = {
+  non_visite:   {label:"À contrôler",   short:"À faire"},
+  conforme:     {label:"Conforme",      short:"Conforme"},
+  non_conforme: {label:"Non conforme",  short:"Non conf."},
+  inaccessible: {label:"Inaccessible",  short:"Inaccess."},
+  non_present:  {label:"Non présent",   short:"Non prés."},
+  termine:      {label:"Terminé",       short:"Terminé"}
+};
+var STATUS_ORDER = ["non_conforme","non_visite","inaccessible","non_present","conforme","termine"];
+var SORT_RANK = {non_conforme:0, non_visite:1, inaccessible:2, non_present:3, conforme:4, termine:5};
+
+var EXPORT_HEADER = ["N° Semaine","N° Demande","État demande","Date début","Date fin","Densité (MJ/m²)",
+  "Local","Précisions","Projet","Date visite (import)","État2 (import)","Service","Défaut colisage (import)",
+  "Tranche","Conformité (import)","N° Constat","Observations (import)",
+  "Statut terrain","Raison / commentaire terrain","Date contrôle terrain","Contrôlé par"];
+
+/* Données brutes de la semaine 37 (colonnes dans l'ordre du fichier source) */
+var SEED_ROWS = []; /* Version GitHub Pages : les donnees reelles vivent cote serveur (Apps Script + Drive), pas dans le code source de la page. */
+
+/* ============ Utilitaires ============ */
+function isNumeroLike(s){ return /^\d{5,}$/.test((s||"").trim()); }
+
+function mapImportStatus(raw){
+  raw=(raw||"").trim().toLowerCase();
+  if(raw==="conforme") return "conforme";
+  if(raw==="non conforme") return "non_conforme";
+  if(raw==="inaccessible") return "inaccessible";
+  if(raw==="non présent"||raw==="non present"||raw==="absent") return "non_present";
+  if(raw==="terminé"||raw==="termine") return "termine";
+  return "non_visite";
+}
+
+function parseFrDate(str){
+  if(!str) return null;
+  var m=(str.trim()).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  return new Date(parseInt(m[3],10), parseInt(m[2],10)-1, parseInt(m[1],10), 23,59,59);
+}
+function todayFr(){
+  var d=new Date();
+  function p(n){return (n<10?"0":"")+n;}
+  return p(d.getDate())+"/"+p(d.getMonth()+1)+"/"+d.getFullYear();
+}
+function getISOWeek(date){
+  var d=new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  var dayNum=d.getUTCDay()||7;
+  d.setUTCDate(d.getUTCDate()+4-dayNum);
+  var yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return Math.ceil((((d-yearStart)/86400000)+1)/7);
+}
+var currentTheme="light";
+function applyTheme(t){
+  currentTheme = (t==="dark") ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", currentTheme);
+  var btn=document.getElementById("themeToggleBtn");
+  if(btn) btn.textContent = (currentTheme==="dark") ? "\u2600" : "\u263E";
+}
+
+function setAppTitle(){
+  var titleEl=document.getElementById("appTitle");
+  var txt="Contrôle COLISAGE — Semaine "+getISOWeek(new Date());
+  if(titleEl) titleEl.textContent=txt;
+  document.title="Contrôle COLISAGE — S"+getISOWeek(new Date());
+}
+function daysDiff(target, refDate){
+  var now=refDate?new Date(refDate.getFullYear(),refDate.getMonth(),refDate.getDate()):new Date();
+  now.setHours(0,0,0,0);
+  var t=new Date(target.getFullYear(),target.getMonth(),target.getDate());
+  return Math.round((t-now)/86400000);
+}
+function escHtml(s){
+  return (s||"").replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function debounce(fn,ms){
+  var t=null;
+  return function(){ var args=arguments,ctx=this; clearTimeout(t); t=setTimeout(function(){fn.apply(ctx,args);},ms); };
+}
+
+/* Construit une "ligne" logique à partir des 17 colonnes source (import ou seed) */
+function rowToParsed(cols){
+  var semaine=(cols[0]||"").trim();
+  var numDemande=(cols[1]||"").trim();
+  var etatDemande=(cols[2]||"").trim();
+  var dateDebut=(cols[3]||"").trim();
+  var dateFin=(cols[4]||"").trim();
+  var densite=(cols[5]||"").trim();
+  var local=(cols[6]||"").trim();
+  var precisions=(cols[7]||"").trim();
+  var projet=(cols[8]||"").trim();
+  var dateVisiteImport=(cols[9]||"").trim();
+  var etat2=(cols[10]||"").trim();
+  var service=(cols[11]||"").trim();
+  var defaut=(cols[12]||"").trim();
+  var tranche=(cols[13]||"").trim();
+  var conformiteImport=(cols[14]||"").trim();
+  var numConstat=(cols[15]||"").trim();
+  var observations=(cols[16]||"").trim();
+
+  var extraStatus=cols[17], extraRaison=cols[18], extraDate=cols[19], extraBy=cols[20];
+  var status="non_visite", raison="", dateControle="", controlledBy="";
+
+  if(extraStatus!==undefined && extraStatus!==null && extraStatus!==""){
+    var mapped=mapImportStatus(extraStatus);
+    if(mapped!=="non_visite"){ status=mapped; raison=(extraRaison||"").trim(); dateControle=(extraDate||"").trim(); controlledBy=(extraBy||"").trim(); }
+  }
+  if(status==="non_visite"){
+    var mapped2=mapImportStatus(etat2||conformiteImport);
+    if(mapped2!=="non_visite"){ status=mapped2; raison=defaut; dateControle=dateVisiteImport; }
+  }
+
+  var key = numDemande+"|"+(local || precisions);
+  return {
+    id:key, semaine:semaine, numDemande:numDemande, etatDemande:etatDemande, dateDebut:dateDebut, dateFin:dateFin,
+    densite:densite, local:local, precisions:precisions, projet:projet, importDateVisite:dateVisiteImport,
+    service:service, defaut:defaut, tranche:tranche, importConformite:conformiteImport, numConstat:numConstat,
+    observations:observations, status:status, raison:raison, dateControle:dateControle, controlledBy:controlledBy, updatedAt:Date.now()
+  };
+}
+
+function parseImportText(text){
+  var lines=text.split(/\r?\n/).filter(function(l){return l.trim().length>0;});
+  var out=[];
+  for(var i=0;i<lines.length;i++){
+    var cols=lines[i].split("\t");
+    if(cols.length<9) continue;
+    if(!isNumeroLike(cols[1])) continue;
+    out.push(rowToParsed(cols));
+  }
+  return out;
+}
+
+/* ============ État ============ */
+/* Connexion fixe : plus rien a saisir, l'appli se connecte toute seule au demarrage. */
+var REMOTE_URL = "https://script.google.com/macros/s/AKfycbxCHANT7Oulsviwls3ho84kMaXsuiKfoaMfrfPJLh-lqNQCM5RKZOgyhQt-0NEIcUBZ0Q/exec?api=1";
+var REMOTE_PASSCODE = "COLISAGE2026";
+
+var STORAGE_KEY="tracker-data";
+var items=[];
+var expanded={};
+var filterStatus=null, filterOverdue=false, filterService="", filterTranche="", searchTerm="", filterWeek="", filterBuilding="";
+var excludedLocaux={};
+
+/* Extrait le code zone (ex: "NA 0403" -> lettre principale N, sous-lettre A, n° 403).
+   Le tri regroupe par lettre principale puis par n°, donc NA 0403 et NB 0403 restent
+   voisins (même zone, même position), mais WA 0403 (zone différente) reste séparé. */
+function extractZoneCode(it){
+  var s=(it.local||"")+" "+(it.precisions||"");
+  var re=/\b([A-Z])([A-Z])\s?(\d{3,4})\b/g;
+  var m, last=null;
+  while((m=re.exec(s))!==null){ last=m; }
+  if(!last) return null;
+  return {main:last[1], sub:last[2], num:parseInt(last[3],10), full:last[1]+last[2]+" "+last[3]};
+}
+
+function getBuildingZone(it){
+  var z=extractZoneCode(it);
+  if(!z) return "Autre / non classé";
+  var code=z.main+z.sub;
+  var floor=Math.floor(z.num/100);
+  switch(code){
+    case "MA": case "MB": case "MC": case "MD": case "ME": case "MF": return "SDM";
+    case "NA": case "NB": return "BAN";
+    case "LC": case "LD": return floor<=5 ? "BAS" : "BL";
+    case "KA": return "BK";
+    case "WA": return "BW";
+    case "DA": return "LHP";
+    case "DB": return "LHQ";
+    case "RA": case "RB": return "BR";
+    case "DU": return "DUS";
+    default: return "Autre / non classé";
+  }
+}
+
+function buildSeed(){
+  var out=[]; var seen={};
+  for(var i=0;i<SEED_ROWS.length;i++){
+    var it=rowToParsed(SEED_ROWS[i]);
+    if(seen[it.id]) continue;
+    seen[it.id]=true;
+    out.push(it);
+  }
+  return out;
+}
+
+function saveData(){
+  var payload=JSON.stringify({items:items});
+  if(storageAvailable()){
+    try{ window.storage.set(STORAGE_KEY, payload, false).catch(function(){}); }catch(e){}
+  } else {
+    try{ localStorage.setItem(STORAGE_KEY, payload); }catch(e){}
+  }
+}
+var saveDataDebounced=debounce(saveData,500);
+
+function storageAvailable(){
+  return typeof window.storage!=="undefined" && window.storage!==null;
+}
+
+function loadData(cb){
+  if(!storageAvailable()){
+    document.getElementById("offlineBanner").classList.add("show");
+    try{
+      var raw=localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsedL=JSON.parse(raw);
+        items=(parsedL && parsedL.items)?parsedL.items:buildSeed();
+      } else {
+        items=buildSeed();
+        saveData();
+      }
+    }catch(e){ items=buildSeed(); }
+    cb();
+    return;
+  }
+  try{
+    window.storage.get(STORAGE_KEY, false).then(function(res){
+      if(res && res.value){
+        try{
+          var parsed=JSON.parse(res.value);
+          items = (parsed && parsed.items) ? parsed.items : buildSeed();
+        }catch(e){ items=buildSeed(); }
+      } else {
+        items=buildSeed();
+        saveData();
+      }
+      cb();
+    }).catch(function(){
+      document.getElementById("offlineBanner").classList.add("show");
+      items=buildSeed(); cb();
+    });
+  }catch(e){
+    document.getElementById("offlineBanner").classList.add("show");
+    items=buildSeed(); cb();
+  }
+}
+
+function loadInspectorName(){
+  if(!storageAvailable()) return;
+  try{
+    window.storage.get("inspector-name", false).then(function(res){
+      if(res && res.value) document.getElementById("inspectorName").value=res.value;
+    }).catch(function(){});
+  }catch(e){}
+}
+var saveInspectorNameDebounced=debounce(function(name){
+  if(!storageAvailable()) return;
+  try{ window.storage.set("inspector-name", name, false).catch(function(){}); }catch(e){}
+},400);
+
+function findItem(id){
+  for(var i=0;i<items.length;i++) if(items[i].id===id) return items[i];
+  return null;
+}
+
+/* ============ Mode connecté (backend Google Apps Script) ============ */
+var remoteUrl="", remotePasscode="", remoteConnected=false;
+var dataGeneration=0;
+var pendingPatch={}, remoteDebounceTimers={};
+
+function cfgGet(key){
+  return new Promise(function(resolve){
+    if(storageAvailable()){
+      try{ window.storage.get(key,false).then(function(res){ resolve(res&&res.value?res.value:""); }).catch(function(){resolve("");}); }
+      catch(e){ resolve(""); }
+    } else {
+      try{ resolve(localStorage.getItem(key)||""); }catch(e){ resolve(""); }
+    }
+  });
+}
+function cfgSet(key,val){
+  if(storageAvailable()){
+    try{ window.storage.set(key,val,false).catch(function(){}); }catch(e){}
+  } else {
+    try{ localStorage.setItem(key,val); }catch(e){}
+  }
+}
+
+function updateConnBadge(){
+  var el=document.getElementById("connStatus");
+  if(!el) return;
+  el.textContent = remoteConnected
+    ? "Connecté — les modifications sont partagées avec vos collègues."
+    : "Connexion en cours ou indisponible — vérifiez votre réseau, puis appuyez sur « Actualiser ».";
+  el.style.color = remoteConnected ? "var(--text-success)" : "var(--text-dim)";
+}
+
+function remoteGet(){
+  var url = remoteUrl + (remoteUrl.indexOf("?")>=0?"&":"?") + "passcode=" + encodeURIComponent(remotePasscode) + "&_=" + Date.now();
+  return fetch(url).then(function(r){ return r.json(); });
+}
+function remotePost(payload){
+  payload = Object.assign({passcode: remotePasscode}, payload);
+  return fetch(remoteUrl, {
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); });
+}
+
+function connectRemote(showMsg){
+  var msgEl=document.getElementById("connMsg");
+  if(!remoteUrl){ if(showMsg) flashMsg(msgEl,"Renseignez d'abord l'URL et le code d'accès.",false); return Promise.resolve(); }
+  var myGen=++dataGeneration;
+  return remoteGet().then(function(res){
+    if(myGen!==dataGeneration) return; /* une action plus recente a deja eu lieu : cette reponse est perimee, on l'ignore */
+    if(res && res.ok!==false){
+      items = applyPendingPatches(res.items || []);
+      remoteConnected=true;
+      updateConnBadge();
+      render();
+      if(showMsg) flashMsg(msgEl,"Connecté — "+items.length+" fiche(s) reçue(s).",true);
+    } else {
+      remoteConnected=false; updateConnBadge();
+      if(showMsg) flashMsg(msgEl,"Échec : URL ou code d'accès incorrect.",false);
+    }
+  }).catch(function(){
+    if(myGen!==dataGeneration) return;
+    remoteConnected=false; updateConnBadge();
+    if(showMsg) flashMsg(msgEl,"Impossible de joindre le serveur (réseau ou URL invalide).",false);
+  });
+}
+
+function applyPendingPatches(arr){
+  Object.keys(pendingPatch).forEach(function(id){
+    for(var i=0;i<arr.length;i++){
+      if(arr[i].id===id){ Object.assign(arr[i], pendingPatch[id]); break; }
+    }
+  });
+  return arr;
+}
+
+function savePendingPatches(){ cfgSet("pending-patches", JSON.stringify(pendingPatch)); }
+
+function isTextareaFocused(){
+  var a=document.activeElement;
+  return !!(a && a.tagName==="TEXTAREA");
+}
+
+function sendPatch(id){
+  var toSend=Object.assign({}, pendingPatch[id]);
+  if(!toSend || Object.keys(toSend).length===0) return Promise.resolve();
+  ++dataGeneration;
+  return remotePost({action:"patchItem", id:id, patch:toSend}).then(function(res){
+    if(pendingPatch[id] && JSON.stringify(pendingPatch[id])===JSON.stringify(toSend)){
+      delete pendingPatch[id];
+      savePendingPatches();
+    }
+    if(res && res.items){
+      items=applyPendingPatches(res.items);
+      /* Ne pas reconstruire la liste pendant que la personne tape dans un champ
+         "raison" : ca lui fait perdre le focus et donne l'impression que la page
+         est figee. On affichera l'etat a jour des qu'elle quitte le champ. */
+      if(!isTextareaFocused()) render();
+    }
+  }).catch(function(){ /* reste en attente : sera retenté automatiquement (actualisation, nouvelle action, ou au rechargement de la page) */ });
+}
+
+function flushPendingPatches(){
+  var ids=Object.keys(pendingPatch);
+  if(ids.length===0) return Promise.resolve();
+  return Promise.all(ids.map(sendPatch)).then(function(){ render(); });
+}
+
+function scheduleRemoteSync(id){
+  if(remoteDebounceTimers[id]) clearTimeout(remoteDebounceTimers[id]);
+  remoteDebounceTimers[id]=setTimeout(function(){ delete remoteDebounceTimers[id]; sendPatch(id); },500);
+}
+
+function updateItem(id, patch, immediate){
+  var it=findItem(id); if(!it) return;
+  Object.assign(it,patch);
+  it.updatedAt=Date.now();
+  if(remoteConnected){
+    pendingPatch[id]=Object.assign(pendingPatch[id]||{}, patch);
+    savePendingPatches();
+    if(immediate){
+      if(remoteDebounceTimers[id]){ clearTimeout(remoteDebounceTimers[id]); delete remoteDebounceTimers[id]; }
+      sendPatch(id);
+    } else {
+      scheduleRemoteSync(id);
+    }
+  } else {
+    saveDataDebounced();
+  }
+}
+
+function setStatus(id, status){
+  var it=findItem(id); if(!it) return;
+  var patch={status:status};
+  if(status==="non_visite"){ patch.dateControle=""; patch.controlledBy=""; }
+  else{
+    if(!it.dateControle){ patch.dateControle=todayFr(); }
+    var nameEl=document.getElementById("inspectorName");
+    var name=nameEl?nameEl.value.trim():"";
+    if(name) patch.controlledBy=name;
+  }
+  updateItem(id,patch,true);
+  render();
+}
+
+function resetItem(id){
+  updateItem(id,{status:"non_visite",raison:"",dateControle:"",controlledBy:""},true);
+  render();
+}
+
+function computeArchivable(){
+  var cutoff = Date.now() - 30*86400000;
+  return items.filter(function(it){
+    if(it.status==="termine") return true;
+    var d=parseFrDate(it.dateFin);
+    if(d && d.getTime()<cutoff) return true;
+    return false;
+  });
+}
+
+function populateDeleteWeekSelect(){
+  var sel=document.getElementById("deleteWeekSelect");
+  if(!sel) return;
+  var weeks={};
+  items.forEach(function(it){
+    var w=itemControlWeek(it);
+    if(w!==null) weeks[w]=true;
+  });
+  var curWeekNum=getISOWeek(new Date());
+  var cur=sel.value;
+  sel.innerHTML='<option value="">Choisir une semaine…</option>'+Object.keys(weeks).map(Number).sort(function(a,b){return b-a;}).map(function(w){
+    return '<option value="'+w+'">Semaine '+w+(w===curWeekNum?" (en cours)":"")+'</option>';
+  }).join("");
+  sel.value=cur;
+}
+
+function deleteWeek(weekNum){
+  var candidates=items.filter(function(it){ return itemControlWeek(it)===weekNum; });
+  var msgEl=document.getElementById("deleteWeekMsg");
+  if(candidates.length===0){
+    flashMsg(msgEl,"Aucune fiche trouvée pour cette semaine.",false);
+    return;
+  }
+  if(!confirm(candidates.length+" fiche(s) de la semaine "+weekNum+" vont être supprimées définitivement de la liste active.\n\nPensez à avoir exporté si besoin. Continuer ?")){
+    return;
+  }
+  var ids=candidates.map(function(it){ return it.id; });
+  var idSet={}; ids.forEach(function(id){ idSet[id]=true; });
+  if(remoteConnected){
+    remotePost({action:"deleteItems", ids:ids}).then(function(res){
+      if(res && res.items){ items=applyPendingPatches(res.items); }
+      else { items=items.filter(function(it){ return !idSet[it.id]; }); }
+      render(); populateDeleteWeekSelect();
+      flashMsg(msgEl, ids.length+" fiche(s) supprimée(s).", true);
+    }).catch(function(){
+      flashMsg(msgEl,"Échec de la suppression côté serveur — réessayez.",false);
+    });
+  } else {
+    items=items.filter(function(it){ return !idSet[it.id]; });
+    saveData();
+    render(); populateDeleteWeekSelect();
+    flashMsg(msgEl, ids.length+" fiche(s) supprimée(s).", true);
+  }
+}
+
+function archiveOldItems(){
+  var candidates=computeArchivable();
+  var msgEl=document.getElementById("archiveMsg");
+  if(candidates.length===0){
+    flashMsg(msgEl,"Rien à archiver pour l'instant.",true);
+    return;
+  }
+  if(!confirm(candidates.length+" demande(s) semblent terminées ou avec une échéance dépassée depuis plus de 30 jours.\n\nLes retirer de la liste active ? Elles restent dans vos exports Excel précédents ; exportez d'abord en cas de doute.")){
+    return;
+  }
+  var ids=candidates.map(function(it){ return it.id; });
+  var idSet={}; ids.forEach(function(id){ idSet[id]=true; });
+  if(remoteConnected){
+    remotePost({action:"deleteItems", ids:ids}).then(function(res){
+      if(res && res.items){ items=applyPendingPatches(res.items); }
+      else { items=items.filter(function(it){ return !idSet[it.id]; }); }
+      render();
+      flashMsg(msgEl, ids.length+" demande(s) archivée(s).", true);
+    }).catch(function(){
+      flashMsg(msgEl,"Échec de l'archivage côté serveur — réessayez.",false);
+    });
+  } else {
+    items=items.filter(function(it){ return !idSet[it.id]; });
+    saveData();
+    render();
+    flashMsg(msgEl, ids.length+" demande(s) archivée(s).", true);
+  }
+}
+
+function deleteAllItems(){
+  var msgEl=document.getElementById("deleteAllMsg");
+  if(items.length===0){ flashMsg(msgEl,"Il n'y a déjà plus rien à supprimer.",true); return; }
+  if(!confirm("Supprimer DÉFINITIVEMENT les "+items.length+" fiches, toutes semaines confondues ?\n\nCette action est irréversible. Avez-vous exporté si besoin ?")) return;
+  if(!confirm("Dernière confirmation : tout sera effacé, y compris pour vos collègues connectés. Continuer ?")) return;
+
+  Object.keys(remoteDebounceTimers).forEach(function(id){ clearTimeout(remoteDebounceTimers[id]); });
+  pendingPatch={}; remoteDebounceTimers={};
+  savePendingPatches();
+
+  if(remoteConnected){
+    remotePost({action:"replaceAll", items:[]}).then(function(res){
+      items = (res && res.items) ? res.items : [];
+      render();
+      flashMsg(msgEl,"Toutes les fiches ont été supprimées.",true);
+    }).catch(function(){
+      flashMsg(msgEl,"Échec côté serveur — réessayez.",false);
+    });
+  } else {
+    items=[];
+    saveData();
+    render();
+    flashMsg(msgEl,"Toutes les fiches ont été supprimées.",true);
+  }
+}
+
+function resetAll(){
+  Object.keys(remoteDebounceTimers).forEach(function(id){ clearTimeout(remoteDebounceTimers[id]); });
+  pendingPatch={}; remoteDebounceTimers={};
+  items.forEach(function(it){ it.status="non_visite"; it.raison=""; it.dateControle=""; it.controlledBy=""; it.updatedAt=Date.now(); });
+  if(remoteConnected){
+    return remotePost({action:"replaceAll", items:items}).then(function(res){
+      if(res && res.items){ items=res.items; }
+      render();
+    }).catch(function(){ render(); });
+  }
+  saveData();
+  render();
+  return Promise.resolve();
+}
+
+function mergeImport(parsedList){
+  if(remoteConnected){
+    var beforeIds={}; items.forEach(function(it){beforeIds[it.id]=true;});
+    ++dataGeneration; /* invalide toute requete plus ancienne encore en vol (ex: connexion initiale lente) */
+    return remotePost({action:"merge", items:parsedList}).then(function(res){
+      var added=0, updated=0;
+      parsedList.forEach(function(p){ if(beforeIds[p.id]) updated++; else added++; });
+      if(res && res.items){ items=res.items; }
+      render();
+      return {added:added, updated:updated};
+    }).catch(function(){
+      return {added:0, updated:0, error:true};
+    });
+  }
+  var added=0, updated=0;
+  parsedList.forEach(function(p){
+    var existing=findItem(p.id);
+    if(existing){
+      var descFields=["semaine","etatDemande","dateDebut","dateFin","densite","local","precisions","projet",
+        "importDateVisite","service","defaut","tranche","importConformite","numConstat","observations"];
+      descFields.forEach(function(f){ existing[f]=p[f]; });
+      if(existing.status==="non_visite" && p.status!=="non_visite"){
+        existing.status=p.status; existing.raison=p.raison; existing.dateControle=p.dateControle; existing.controlledBy=p.controlledBy;
+      }
+      existing.updatedAt=Date.now();
+      updated++;
+    } else {
+      items.push(p);
+      added++;
+    }
+  });
+  saveData();
+  render();
+  return Promise.resolve({added:added,updated:updated});
+}
+
+/* ============ Rendu ============ */
+function computeOverdue(it){
+  var d=parseFrDate(it.dateFin);
+  if(!d) return {overdue:false,soon:false,days:null};
+  /* Une fois la fiche contrôlée, on compare l'échéance à la date à laquelle
+     le contrôle a été fait, pas à aujourd'hui : un contrôle valide un 15/09
+     pour une échéance du 16/09 reste "dans les temps" pour toujours, même
+     si on regarde la fiche bien plus tard. Tant qu'elle n'est pas encore
+     contrôlée, on compare à la date du jour, pour prioriser la tournée. */
+  var refDate = it.dateControle ? parseFrDate(it.dateControle) : null;
+  var diff=daysDiff(d, refDate);
+  var overdue = diff<0 && it.status!=="termine";
+  var soon = !overdue && diff>=0 && diff<=14 && it.status!=="termine";
+  return {overdue:overdue, soon:soon, days:diff};
+}
+
+function localKey(it){ return it.local || it.precisions || "(local non renseigné)"; }
+
+function itemControlWeek(it){
+  if(!it.dateControle) return null;
+  var d=parseFrDate(it.dateControle);
+  return d ? getISOWeek(d) : null;
+}
+
+function getFiltered(){
+  var term=searchTerm.trim().toLowerCase();
+  var curWeek=getISOWeek(new Date());
+  return items.filter(function(it){
+    if(excludedLocaux[localKey(it)]) return false;
+    if(filterWeek!==""){
+      var w=itemControlWeek(it);
+      if(w!==null && w!==parseInt(filterWeek,10)) return false;
+    }
+    if(filterService && it.service!==filterService) return false;
+    if(filterBuilding && getBuildingZone(it)!==filterBuilding) return false;
+    if(filterTranche && (it.tranche||"(non spécifié)")!==filterTranche) return false;
+    if(filterOverdue){ if(!computeOverdue(it).overdue) return false; }
+    else if(filterStatus && it.status!==filterStatus) return false;
+    if(term){
+      var hay=(it.local+" "+it.precisions+" "+it.numDemande+" "+it.projet+" "+it.service).toLowerCase();
+      if(hay.indexOf(term)===-1) return false;
+    }
+    return true;
+  }).sort(function(a,b){
+    var za=extractZoneCode(a), zb=extractZoneCode(b);
+    if(!za&&!zb) return (a.local||a.precisions||"").localeCompare(b.local||b.precisions||"");
+    if(!za) return 1;
+    if(!zb) return -1;
+    if(za.main!==zb.main) return za.main<zb.main?-1:1;
+    if(za.num!==zb.num) return za.num-zb.num;
+    if(za.sub!==zb.sub) return za.sub<zb.sub?-1:1;
+    return 0;
+  });
+}
+
+function saveExcludedLocaux(){ cfgSet("excluded-locaux", JSON.stringify(Object.keys(excludedLocaux))); }
+
+function renderLocauxList(){
+  var container=document.getElementById("locauxList");
+  if(!container) return;
+  var counts={};
+  items.forEach(function(it){
+    var k=localKey(it);
+    counts[k]=(counts[k]||0)+1;
+  });
+  var names=Object.keys(counts).sort(function(a,b){ return a.localeCompare(b); });
+  container.innerHTML = names.map(function(n){
+    var checked = !excludedLocaux[n];
+    return '<label class="locaux-row">'+
+      '<input type="checkbox" data-action="toggle-local" data-local="'+escHtml(n)+'"'+(checked?' checked':'')+'>'+
+      '<span class="name">'+escHtml(n)+'</span>'+
+      '<span class="count">'+counts[n]+'</span>'+
+    '</label>';
+  }).join("");
+}
+
+function populateFilterOptions(){
+  var tranches={}, weeks={}, buildings={};
+  items.forEach(function(it){
+    tranches[it.tranche||"(non spécifié)"]=true;
+    buildings[getBuildingZone(it)]=true;
+    var w=itemControlWeek(it);
+    if(w!==null) weeks[w]=true;
+  });
+  var tSel=document.getElementById("trancheFilter");
+  var wSel=document.getElementById("weekFilter");
+  var bSel=document.getElementById("buildingFilter");
+  var curT=tSel.value, curW=wSel.value, curB=bSel.value;
+  tSel.innerHTML='<option value="">Toutes les tranches</option>'+Object.keys(tranches).sort().map(function(t){
+    return '<option value="'+escHtml(t)+'">'+escHtml(t)+'</option>';
+  }).join("");
+  var curWeekNum=getISOWeek(new Date());
+  wSel.innerHTML='<option value="">Toutes les semaines</option>'+Object.keys(weeks).map(Number).sort(function(a,b){return b-a;}).map(function(w){
+    return '<option value="'+w+'">Semaine '+w+(w===curWeekNum?" (en cours)":"")+'</option>';
+  }).join("");
+  bSel.innerHTML='<option value="">Tous les bâtiments</option>'+Object.keys(buildings).sort().map(function(b){
+    return '<option value="'+escHtml(b)+'">'+escHtml(b)+'</option>';
+  }).join("");
+  tSel.value=curT; wSel.value=curW; bSel.value=curB;
+}
+
+function getCountsBase(){
+  var term=searchTerm.trim().toLowerCase();
+  return items.filter(function(it){
+    if(excludedLocaux[localKey(it)]) return false;
+    if(filterWeek!==""){
+      var w=itemControlWeek(it);
+      if(w!==null && w!==parseInt(filterWeek,10)) return false;
+    }
+    if(filterService && it.service!==filterService) return false;
+    if(filterBuilding && getBuildingZone(it)!==filterBuilding) return false;
+    if(filterTranche && (it.tranche||"(non spécifié)")!==filterTranche) return false;
+    if(term){
+      var hay=(it.local+" "+it.precisions+" "+it.numDemande+" "+it.projet+" "+it.service).toLowerCase();
+      if(hay.indexOf(term)===-1) return false;
+    }
+    return true;
+  });
+}
+
+function renderStats(){
+  var counts={non_visite:0,conforme:0,non_conforme:0,inaccessible:0,non_present:0,termine:0};
+  var overdueCount=0;
+  var baseSet=getCountsBase();
+  baseSet.forEach(function(it){
+    counts[it.status]=(counts[it.status]||0)+1;
+    if(computeOverdue(it).overdue) overdueCount++;
+  });
+  var row=document.getElementById("statsRow");
+  var html='<div class="chip'+(!filterStatus&&!filterOverdue?' active':'')+'" data-action="filter-status" data-status="">Tout <b>'+baseSet.length+'</b></div>';
+  STATUS_ORDER.forEach(function(s){
+    html+='<div class="chip'+(filterStatus===s&&!filterOverdue?' active':'')+'" data-action="filter-status" data-status="'+s+'">'+
+      '<span class="dot" style="background:var(--c-'+s.replace("_","")+')"></span>'+STATUS[s].short+' <b>'+(counts[s]||0)+'</b></div>';
+  });
+  html+='<div class="chip warn'+(filterOverdue?' active':'')+'" data-action="filter-overdue">⚠ Échéance dépassée <b>'+overdueCount+'</b></div>';
+  row.innerHTML=html;
+
+  var filteredNow=getFiltered();
+  var remainingNow=filteredNow.filter(function(it){ return it.status==="non_visite"; }).length;
+  document.getElementById("headerSub").textContent=filteredNow.length+" fiche(s) affichée(s) — "+remainingNow+" contrôle(s) restant(s)";
+
+  var sg=document.getElementById("statGrid");
+  if(sg){
+    sg.innerHTML=
+      '<div class="stat-box"><div class="n" style="color:var(--c-nonconforme)">'+(counts.non_conforme||0)+'</div><div class="l">Non conformes</div></div>'+
+      '<div class="stat-box"><div class="n" style="color:var(--c-nonvisite)">'+(counts.non_visite||0)+'</div><div class="l">À contrôler</div></div>'+
+      '<div class="stat-box"><div class="n" style="color:var(--c-conforme)">'+(counts.conforme||0)+'</div><div class="l">Conformes</div></div>'+
+      '<div class="stat-box"><div class="n" style="color:var(--c-inaccessible)">'+(counts.inaccessible||0)+'</div><div class="l">Inaccessibles</div></div>'+
+      '<div class="stat-box"><div class="n" style="color:var(--c-nonpresent)">'+(counts.non_present||0)+'</div><div class="l">Non présents</div></div>'+
+      '<div class="stat-box"><div class="n" style="color:var(--c-termine)">'+(counts.termine||0)+'</div><div class="l">Terminés</div></div>'+
+      '<div class="stat-box"><div class="n" style="color:var(--c-nonconforme)">'+overdueCount+'</div><div class="l">Échéances dépassées</div></div>';
+  }
+}
+
+function cardHtml(it){
+  var ov=computeOverdue(it);
+  var mainLocal = it.local || it.precisions || "(local non renseigné)";
+  var secondary = (it.local && it.precisions) ? it.precisions : "";
+  var isExpanded=!!expanded[it.id];
+
+  var badges='';
+  if(it.service) badges+='<span class="badge service">'+escHtml(it.service)+'</span>';
+  if(it.tranche) badges+='<span class="badge">'+escHtml(it.tranche)+'</span>';
+  if(it.densite && it.densite!=="0") badges+='<span class="badge">'+escHtml(it.densite)+' MJ/m²</span>';
+  if(ov.overdue) badges+='<span class="badge overdue">Échéance dépassée'+(ov.days!==null?' ('+Math.abs(ov.days)+'j)':'')+'</span>';
+  else if(ov.soon) badges+='<span class="badge soon">Échéance dans '+ov.days+'j</span>';
+
+  var statusBtns=STATUS_ORDER.map(function(s){
+    return '<button class="status-btn'+(it.status===s?' on':'')+'" data-action="set-status" data-id="'+it.id+'" data-status="'+s+'">'+
+      '<span class="dot"></span>'+STATUS[s].short+'</button>';
+  }).join("");
+
+  var reasonHtml='';
+  if(it.status==="non_conforme"){
+    var estHorsListe = it.raison && NON_CONFORME_RAISONS.indexOf(it.raison)===-1;
+    var optionsHtml = '<option value="">Choisir un motif…</option>' +
+      (estHorsListe ? '<option value="'+escHtml(it.raison)+'" selected>'+escHtml(it.raison)+'</option>' : '') +
+      NON_CONFORME_RAISONS.map(function(o){
+        return '<option value="'+escHtml(o)+'"'+(it.raison===o?' selected':'')+'>'+escHtml(o)+'</option>';
+      }).join("");
+    reasonHtml='<div class="reason-box"><select data-action="set-reason-select" data-id="'+it.id+'">'+optionsHtml+'</select></div>';
+  } else if(it.status==="non_present"){
+    reasonHtml='<div class="reason-box"><textarea data-action="set-reason" data-id="'+it.id+'" placeholder="Précisez ce qui est absent…">'+escHtml(it.raison)+'</textarea></div>';
+  }
+
+  var detailsHtml='';
+  if(isExpanded){
+    detailsHtml='<div class="details">'+
+      (it.projet?'<div><b>Projet :</b> '+escHtml(it.projet)+'</div>':'')+
+      '<div><b>Période décidée :</b> '+escHtml(it.dateDebut)+' → '+escHtml(it.dateFin)+'</div>'+
+      (it.defaut?'<div><b>Défaut relevé (import) :</b> '+escHtml(it.defaut)+'</div>':'')+
+      (it.numConstat?'<div><b>N° constat :</b> '+escHtml(it.numConstat)+'</div>':'')+
+      (it.observations?'<div><b>Observations (import) :</b> '+escHtml(it.observations)+'</div>':'')+
+      '</div>';
+  }
+
+  return '<div class="card" data-status="'+it.status+'">'+
+    '<div class="card-head" data-action="toggle-expand" data-id="'+it.id+'">'+
+      '<div class="card-top"><div class="card-local">'+escHtml(mainLocal)+'</div>'+
+        '<div class="card-num mono">n° '+escHtml(it.numDemande)+'</div></div>'+
+      (secondary?'<div class="card-sub">'+escHtml(secondary)+'</div>':'')+
+      '<div class="card-meta">'+badges+'</div>'+
+    '</div>'+
+    '<div class="status-row">'+statusBtns+'</div>'+
+    reasonHtml+
+    detailsHtml+
+    '<div class="card-foot">'+
+      '<div class="foot-info">'+(it.dateControle?'Contrôlé le '+escHtml(it.dateControle)+(it.controlledBy?' par '+escHtml(it.controlledBy):''):'Pas encore contrôlé')+'</div>'+
+      '<div>'+
+        (it.status!=="non_visite"?'<button class="reset-btn" data-action="reset-item" data-id="'+it.id+'">réinitialiser</button>':'')+
+        '<button class="expand-btn" data-action="toggle-expand" data-id="'+it.id+'">'+(isExpanded?'moins ▲':'détails ▼')+'</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function render(){
+  populateFilterOptions();
+  renderStats();
+  var filtered=getFiltered();
+  var list=document.getElementById("list");
+  if(filtered.length===0){
+    list.innerHTML='<div class="empty">Aucune fiche ne correspond à ces filtres.</div>';
+    return;
+  }
+  list.innerHTML=filtered.map(cardHtml).join("");
+}
+
+/* ============ Export ============ */
+function toAscii(s){
+  s=(s||"").toString();
+  s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  s=s.replace(/²/g,"2").replace(/³/g,"3").replace(/°/g,"")
+     .replace(/[«»]/g,'"').replace(/[’‘]/g,"'").replace(/[—–]/g,"-")
+     .replace(/œ/gi,"oe").replace(/æ/gi,"ae");
+  s=s.replace(/[^\x00-\x7F]/g,""); // filet de securite : retire tout caractere non-ASCII restant
+  return s;
+}
+
+function buildExportTsv(){
+  var rows=[EXPORT_HEADER.map(toAscii).join("\t")];
+  items.forEach(function(it){
+    rows.push([
+      it.semaine, it.numDemande, it.etatDemande, it.dateDebut, it.dateFin, it.densite,
+      it.local, it.precisions, it.projet, it.importDateVisite, "", it.service, it.defaut,
+      it.tranche, it.importConformite, it.numConstat, it.observations,
+      STATUS[it.status].label, it.raison, it.dateControle, it.controlledBy
+    ].map(function(v){ return toAscii(v).replace(/\t/g," ").replace(/\n/g," "); }).join("\t"));
+  });
+  return rows.join("\n");
+}
+
+function flashMsg(el, text, ok){
+  el.textContent=text;
+  el.className="msg show "+(ok?"ok":"err");
+  setTimeout(function(){ el.className="msg"; },4000);
+}
+
+/* ============ Événements ============ */
+document.addEventListener("click", function(e){
+  var t=e.target.closest("[data-action]");
+  if(!t) return;
+  var action=t.getAttribute("data-action");
+
+  if(action==="goto-page"){
+    var pageDest=t.getAttribute("data-page");
+    location.href = pageDest==="crise" ? "crise.html" : "index.html";
+  }
+  else if(action==="toggle-theme"){
+    var next = currentTheme==="dark" ? "light" : "dark";
+    applyTheme(next);
+    cfgSet("theme", next);
+  }
+  else if(action==="open-tools"){ document.getElementById("toolsOverlay").classList.remove("hidden"); renderLocauxList(); populateDeleteWeekSelect(); }
+  else if(action==="close-tools"){ document.getElementById("toolsOverlay").classList.add("hidden"); }
+  else if(action==="filter-status"){
+    var st=t.getAttribute("data-status");
+    filterOverdue=false;
+    filterStatus = (filterStatus===st || st==="") ? null : st;
+    render();
+  }
+  else if(action==="filter-overdue"){
+    filterStatus=null;
+    filterOverdue=!filterOverdue;
+    render();
+  }
+  else if(action==="set-status"){
+    setStatus(t.getAttribute("data-id"), t.getAttribute("data-status"));
+  }
+  else if(action==="reset-item"){
+    resetItem(t.getAttribute("data-id"));
+  }
+  else if(action==="toggle-expand"){
+    var id=t.getAttribute("data-id");
+    expanded[id]=!expanded[id];
+    render();
+  }
+  else if(action==="copy-export"){
+    var tsv=buildExportTsv();
+    var msgEl=document.getElementById("exportMsg");
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(tsv).then(function(){
+        flashMsg(msgEl,"Tableau copié — collez-le dans Excel.",true);
+      }).catch(function(){
+        flashMsg(msgEl,"Impossible de copier automatiquement. Utilisez le téléchargement.",false);
+      });
+    } else {
+      flashMsg(msgEl,"Copie non disponible sur ce navigateur. Utilisez le téléchargement.",false);
+    }
+  }
+  else if(action==="download-export"){
+    var tsv2=buildExportTsv();
+    var blob=new Blob([tsv2],{type:"text/tab-separated-values;charset=utf-8"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    var d=new Date();
+    function p(n){return (n<10?"0":"")+n;}
+    a.href=url;
+    a.download="suivi-aires-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    flashMsg(document.getElementById("exportMsg"),"Fichier téléchargé.",true);
+  }
+  else if(action==="do-import"){
+    var ta=document.getElementById("importText");
+    var msgEl2=document.getElementById("importMsg");
+    var parsed=parseImportText(ta.value);
+    if(parsed.length===0){
+      flashMsg(msgEl2,"Aucune ligne reconnue. Vérifiez que le texte collé contient bien les colonnes séparées par tabulation.",false);
+      return;
+    }
+    mergeImport(parsed).then(function(res){
+      ta.value="";
+      if(res.error){ flashMsg(msgEl2,"Import local effectué, mais l'envoi au serveur a échoué — réessayez « Actualiser ».",false); return; }
+      flashMsg(msgEl2, res.added+" fiche(s) ajoutée(s), "+res.updated+" mise(s) à jour.", true);
+    });
+  }
+  else if(action==="archive-old"){
+    archiveOldItems();
+  }
+  else if(action==="delete-week"){
+    var wSel=document.getElementById("deleteWeekSelect");
+    var wVal=wSel?wSel.value:"";
+    if(!wVal){ flashMsg(document.getElementById("deleteWeekMsg"),"Choisissez d'abord une semaine.",false); return; }
+    deleteWeek(parseInt(wVal,10));
+  }
+  else if(action==="delete-all"){
+    deleteAllItems();
+  }
+  else if(action==="reset-all"){
+    if(confirm("Repasser toutes les fiches en \u00ab à contrôler \u00bb ? Pensez à avoir exporté avant.")){
+      resetAll();
+      document.getElementById("toolsOverlay").classList.add("hidden");
+    }
+  }
+  else if(action==="remote-refresh"){
+    connectRemote(true);
+  }
+  else if(action==="toggle-local"){
+    var localName=t.getAttribute("data-local");
+    if(t.checked){ delete excludedLocaux[localName]; } else { excludedLocaux[localName]=true; }
+    saveExcludedLocaux();
+    render();
+  }
+  else if(action==="locaux-check-all"){
+    excludedLocaux={};
+    saveExcludedLocaux();
+    renderLocauxList();
+    render();
+  }
+  else if(action==="locaux-uncheck-all"){
+    var allNames={};
+    items.forEach(function(it){ allNames[localKey(it)]=true; });
+    excludedLocaux=allNames;
+    saveExcludedLocaux();
+    renderLocauxList();
+    render();
+  }
+});
+
+document.getElementById("searchInput").addEventListener("input", debounce(function(e){
+  searchTerm=e.target.value; render();
+},200));
+document.getElementById("trancheFilter").addEventListener("change", function(e){ filterTranche=e.target.value; render(); });
+document.getElementById("weekFilter").addEventListener("change", function(e){ filterWeek=e.target.value; render(); });
+document.getElementById("buildingFilter").addEventListener("change", function(e){ filterBuilding=e.target.value; render(); });
+document.getElementById("inspectorName").addEventListener("change", function(e){
+  saveInspectorNameDebounced(e.target.value.trim());
+});
+
+document.addEventListener("input", function(e){
+  if(e.target.getAttribute && e.target.getAttribute("data-action")==="set-reason"){
+    var id=e.target.getAttribute("data-id");
+    updateItem(id,{raison:e.target.value});
+  }
+});
+
+/* Des qu'on quitte le champ "raison", on rattrape un affichage a jour
+   (au cas ou une synchronisation a ete mise en pause pendant la saisie). */
+document.addEventListener("focusout", function(e){
+  if(e.target && e.target.getAttribute && e.target.getAttribute("data-action")==="set-reason"){
+    render();
+  }
+});
+
+document.addEventListener("change", function(e){
+  if(e.target.getAttribute && e.target.getAttribute("data-action")==="set-reason-select"){
+    var id=e.target.getAttribute("data-id");
+    updateItem(id,{raison:e.target.value},true);
+  }
+});
+
+/* ============ Démarrage ============ */
+cfgGet("theme").then(function(t){ applyTheme(t||"light"); });
+
+setAppTitle();
+loadInspectorName();
+
+Promise.all([cfgGet("pending-patches"), cfgGet("excluded-locaux")]).then(function(vals){
+  remoteUrl = REMOTE_URL;
+  remotePasscode = REMOTE_PASSCODE;
+  try{ pendingPatch = vals[0] ? (JSON.parse(vals[0])||{}) : {}; }catch(e){ pendingPatch={}; }
+  try{
+    var exList = vals[1] ? JSON.parse(vals[1]) : [];
+    excludedLocaux={}; exList.forEach(function(n){ excludedLocaux[n]=true; });
+  }catch(e){ excludedLocaux={}; }
+
+  updateConnBadge();
+  connectRemote(false).then(function(){
+    return flushPendingPatches();
+  }).then(function(){ render(); });
+});
+
+/* Avertit si on quitte/recharge la page pendant qu'une modification n'est pas encore confirmée par le serveur */
+window.addEventListener("beforeunload", function(e){
+  if(remoteConnected && Object.keys(pendingPatch).length>0){
+    e.preventDefault(); e.returnValue="";
+    return "";
+  }
+});
+
+/* Actualisation automatique en arrière-plan si connecté (sans déranger une saisie en cours),
+   et nouvelle tentative pour toute modification encore en attente d'envoi. */
+setInterval(function(){
+  if(!remoteConnected) return;
+  flushPendingPatches();
+  var active=document.activeElement;
+  if(active && active.tagName==="TEXTAREA") return;
+  var myGen=++dataGeneration;
+  remoteGet().then(function(res){
+    if(myGen!==dataGeneration) return;
+    if(res && res.items){ items=applyPendingPatches(res.items); render(); }
+  }).catch(function(){});
+},20000);
+
+})();
+</script>
+</body>
+</html>

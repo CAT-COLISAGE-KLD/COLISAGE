@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Locaux de crise</title>
+<style>
+:root{
+--bg:#f4f5f7; --panel:#ffffff; --panel-raised:#eaecf0; --border:#c7cdd6; --border-soft:#dde1e7;
+--text:#12161c; --text-dim:#4a5361; --text-faint:#767f8c;
+--accent:#a15e00; --on-accent-text:#ffffff;
+--text-warn:#7a4a00; --bg-warn-tint:rgba(161,94,0,0.10);
+--text-danger:#8a241a; --bg-danger-tint:rgba(184,52,42,0.12); --bg-danger-tint-soft:rgba(184,52,42,0.10);
+--text-success:#14602f; --bg-success-tint:rgba(26,122,65,0.10);
+--c-acontroler:#1d5fa8; --c-conforme:#1a7a41; --c-nonconforme:#b8342a;
+--radius:8px; font-size:16px;
+}
+:root[data-theme="dark"]{
+--bg:#12161c; --panel:#1a2029; --panel-raised:#212a34; --border:#2a323d; --border-soft:#232b35;
+--text:#edeff2; --text-dim:#8d97a5; --text-faint:#5c6673;
+--accent:#e3a23c; --on-accent-text:#1a1206;
+--text-warn:#f0c07c; --bg-warn-tint:rgba(227,162,60,0.14);
+--text-danger:#f0a99e; --bg-danger-tint:rgba(220,91,74,0.16); --bg-danger-tint-soft:rgba(220,91,74,0.14);
+--text-success:#a7e0bd; --bg-success-tint:rgba(63,169,104,0.14);
+--c-acontroler:#4c86c7; --c-conforme:#3fa968; --c-nonconforme:#dc5b4a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+.mono{font-family:ui-monospace,SFMono-Regular,"Roboto Mono",Menlo,Consolas,monospace;}
+#app{min-height:100vh;display:flex;flex-direction:column;padding-bottom:48px;}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 10px;}
+.header-top h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+.header-top .sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.tools-btn{background:var(--panel-raised);border:1px solid var(--border);color:var(--text);
+width:38px;height:38px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.tools-btn:active{background:var(--border);}
+.name-row{display:flex;gap:8px;padding:0 14px 10px;align-items:center;}
+.name-row label{font-size:11.5px;color:var(--text-faint);white-space:nowrap;}
+.name-row select,.name-row input{flex:1;background:var(--panel);border:1px solid var(--border);color:var(--text);
+border-radius:var(--radius);padding:8px 11px;font-size:13.5px;}
+.stats-row{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;}
+.chip{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:20px;
+border:1px solid var(--border);background:var(--panel);font-size:11.5px;color:var(--text-dim);white-space:nowrap;}
+.chip b{color:var(--text);font-weight:600;}
+.chip.active{border-color:var(--accent);background:rgba(161,94,0,0.10);color:var(--text);}
+.page-tabs{display:flex;gap:8px;padding:0 14px 10px;}
+.tab-btn{flex:1;min-height:36px;border-radius:var(--radius);border:1px solid var(--border);
+background:var(--panel);color:var(--text-dim);font-size:12.5px;font-weight:500;}
+.tab-btn.active{border-color:var(--accent);background:rgba(161,94,0,0.10);color:var(--text);font-weight:600;}
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px;}
+.filter-row input[type=search]{flex:1 1 100%;min-width:0;background:var(--panel);border:1px solid var(--border);
+color:var(--text);border-radius:var(--radius);padding:9px 11px;font-size:14px;}
+.filter-row select{flex:1 1 0;min-width:0;background:var(--panel);border:1px solid var(--border);color:var(--text);
+border-radius:var(--radius);padding:9px 6px;font-size:12.5px;}
+main{padding:10px 14px 24px;display:flex;flex-direction:column;gap:8px;}
+.empty{text-align:center;color:var(--text-dim);padding:60px 20px;font-size:14px;line-height:1.6;}
+.card{background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);overflow:hidden;}
+.card-head{padding:11px 12px 9px;}
+.card-local{font-size:15.5px;font-weight:700;color:var(--text);}
+.card-bat{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.section{padding:0 12px 11px;}
+.section-label{font-size:11.5px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.03em;margin:8px 0 5px;}
+.status-row{display:flex;gap:5px;}
+.status-btn{flex:1;min-height:40px;border-radius:6px;border:1px solid var(--border);background:var(--panel-raised);
+color:var(--text-dim);font-size:12.5px;font-weight:500;}
+.status-btn.on{color:#fff;border-color:transparent;}
+.status-btn.on.st-conforme{background:var(--c-conforme);}
+.status-btn.on.st-non_conforme{background:var(--c-nonconforme);}
+textarea.reason{width:100%;min-height:50px;resize:vertical;background:var(--panel-raised);border:1px solid var(--c-nonconforme);
+border-radius:6px;color:var(--text);padding:8px 9px;font-size:13.5px;font-family:inherit;margin-top:6px;}
+.card-foot{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--border-soft);}
+.foot-info{font-size:11px;color:var(--text-faint);}
+.reset-btn{font-size:11.5px;color:var(--text-dim);background:none;border:none;padding:4px 6px;text-decoration:underline;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:50;display:flex;align-items:flex-end;}
+.overlay.hidden{display:none;}
+.sheet{background:var(--bg);border-top:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-height:88vh;
+overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom));position:relative;}
+.sheet h2{font-size:15px;margin:0 0 4px;}
+.sheet .close{position:absolute;right:18px;top:14px;background:var(--panel-raised);border:1px solid var(--border);
+color:var(--text);width:32px;height:32px;border-radius:50%;}
+.sheet-section{margin-top:18px;}
+.sheet-section h3{font-size:12.5px;color:var(--text-dim);margin:0 0 8px;font-weight:600;}
+.sheet-section p{font-size:12.5px;color:var(--text-faint);line-height:1.6;margin:6px 0 10px;}
+.sheet-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.btn{flex:1 1 auto;min-height:42px;border-radius:8px;border:1px solid var(--border);background:var(--panel-raised);
+color:var(--text);font-size:13.5px;font-weight:500;padding:0 12px;}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent-text);font-weight:600;}
+.btn.danger{color:var(--text-danger);border-color:var(--c-nonconforme);}
+.msg{font-size:12.5px;padding:9px 11px;border-radius:6px;margin-top:8px;display:none;}
+.msg.show{display:block;}
+.msg.ok{background:var(--bg-success-tint);border:1px solid var(--c-conforme);color:var(--text-success);}
+.msg.err{background:var(--bg-danger-tint-soft);border:1px solid var(--c-nonconforme);color:var(--text-danger);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px;}
+.stat-box .n{font-size:20px;font-weight:700;}
+.stat-box .l{font-size:11px;color:var(--text-dim);margin-top:2px;}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<div class="header-top">
+<div>
+<h1 id="appTitle">Locaux de crise</h1>
+<div class="sub" id="headerSub">Chargement…</div>
+</div>
+<div style="display:flex;gap:8px;">
+<button class="tools-btn" data-action="toggle-theme" id="themeToggleBtn">☾</button>
+<button class="tools-btn" data-action="open-tools">⚙</button>
+</div>
+</div>
+<div class="page-tabs">
+<button class="tab-btn" data-action="goto-page" data-page="colisage">Contrôle COLISAGE</button>
+<button class="tab-btn active" data-action="goto-page" data-page="crise">Locaux de crise</button>
+</div>
+<div class="name-row">
+<label for="inspectorName">Contrôlé par</label>
+<select id="inspectorName">
+<option value="">Choisir…</option>
+<option value="Jordan IGNACZAK">Jordan IGNACZAK</option>
+<option value="Jordan GIULIANO">Jordan GIULIANO</option>
+<option value="Amélie BREIJO">Amélie BREIJO</option>
+<option value="Ines DONNY">Ines DONNY</option>
+</select>
+</div>
+<div class="stats-row" id="statsRow"></div>
+<div class="filter-row">
+<select id="trancheFilter">
+<option value="1">Tranche 1</option>
+<option value="2">Tranche 2</option>
+<option value="3">Tranche 3</option>
+<option value="4">Tranche 4</option>
+</select>
+<input type="search" id="searchInput" placeholder="Rechercher (local, bâtiment…)">
+<select id="buildingFilter"><option value="">Tous les bâtiments</option></select>
+<select id="weekFilter"><option value="">Toutes les semaines</option></select>
+</div>
+</header>
+<main id="list"></main>
+</div>
+
+<div class="overlay hidden" id="toolsOverlay">
+<div class="sheet">
+<button class="close" data-action="close-tools">✕</button>
+<h2>Outils — Locaux de crise</h2>
+<div class="sub" style="font-size:12px;color:var(--text-dim);">Séparé du suivi COLISAGE : rien n'est jamais mélangé.</div>
+
+<div class="sheet-section">
+<h3>Vue d'ensemble</h3>
+<div class="stat-grid" id="statGrid"></div>
+</div>
+
+<div class="sheet-section">
+<h3>Connexion</h3>
+<p id="connStatus" style="color:var(--text-dim);">Connexion en cours…</p>
+<div class="sheet-btns">
+<button class="btn" data-action="remote-refresh">Actualiser</button>
+</div>
+<div class="msg" id="connMsg"></div>
+</div>
+
+<div class="sheet-section">
+<h3>Renommer un bâtiment</h3>
+<p>Corrige le nom d'un bâtiment sur toutes les fiches concernées, sans dupliquer ni perdre les statuts déjà cochés.</p>
+<input type="text" id="renameOldInput" placeholder="Nom actuel (ex: BK 22m)" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 10px;font-size:13px;margin-bottom:8px;">
+<input type="text" id="renameNewInput" placeholder="Nouveau nom (ex: BK)" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 10px;font-size:13px;">
+<div class="sheet-btns">
+<button class="btn primary" data-action="do-rename-building">Renommer</button>
+</div>
+<div class="msg" id="renameMsg"></div>
+</div>
+
+<div class="sheet-section">
+<h3>Importer des locaux</h3>
+<p>Collez ici une liste de locaux : deux colonnes séparées par une tabulation (Bâtiment, Local), une ligne par local — copiée directement depuis Excel. Un local déjà présent (même tranche + même bâtiment + même nom) est mis à jour sans écraser un statut déjà coché ; un nouveau est ajouté sur les 4 tranches.</p>
+<textarea id="importText" placeholder="Collez ici (Bâtiment [tabulation] Local, une ligne par local)…" style="width:100%;min-height:110px;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:13px;font-family:inherit;"></textarea>
+<div class="sheet-btns">
+<button class="btn primary" data-action="do-import">Importer / mettre à jour</button>
+</div>
+<div class="msg" id="importMsg"></div>
+</div>
+
+<div class="sheet-section">
+<h3>Récupérer la semaine</h3>
+<div class="sheet-btns">
+<button class="btn primary" data-action="copy-export">Copier le tableau</button>
+<button class="btn" data-action="download-export">Télécharger le fichier</button>
+</div>
+<div class="msg" id="exportMsg"></div>
+</div>
+
+<div class="sheet-section">
+<h3>Remise à zéro</h3>
+<p>Repasse tous les locaux en « à contrôler ». Pensez à exporter avant.</p>
+<div class="sheet-btns">
+<button class="btn danger" data-action="reset-all">Réinitialiser tous les statuts</button>
+</div>
+</div>
+
+<div class="sheet-section">
+<h3>Supprimer une semaine précise</h3>
+<p>Choisissez une semaine déjà contrôlée pour supprimer d'un coup tous les locaux qui lui appartiennent. Les locaux jamais contrôlés ne sont jamais concernés.</p>
+<select id="deleteWeekSelect" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 10px;font-size:13px;margin-bottom:8px;"><option value="">Choisir une semaine…</option></select>
+<div class="sheet-btns">
+<button class="btn danger" data-action="delete-week">Supprimer cette semaine</button>
+</div>
+<div class="msg" id="deleteWeekMsg"></div>
+</div>
+
+<div class="sheet-section">
+<h3 style="color:var(--text-danger);">Zone dangereuse</h3>
+<p>Supprime absolument tous les locaux, quelle que soit la semaine. Irréversible. Exportez avant si le moindre doute.</p>
+<div class="sheet-btns">
+<button class="btn danger" data-action="delete-all">Tout supprimer</button>
+</div>
+<div class="msg" id="deleteAllMsg"></div>
+</div>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var SEED_CRISE = []; /* Version GitHub Pages : les données réelles vivent côté serveur (Apps Script + Drive) */
+
+var STATUS_LABEL = {a_controler:"À contrôler", conforme:"Conforme", non_conforme:"Non conforme"};
+var REMOTE_URL = "https://script.google.com/macros/s/AKfycbxCHANT7Oulsviwls3ho84kMaXsuiKfoaMfrfPJLh-lqNQCM5RKZOgyhQt-0NEIcUBZ0Q/exec?api=1";
+var REMOTE_PASSCODE = "COLISAGE2026";
+
+var STORAGE_KEY = "crise-data";
+var items = [];
+var expanded = {};
+var filterBuilding="", filterWeek="", searchTerm="", filterStatus="", filterTranche="1";
+var remoteUrl="", remotePasscode="", remoteConnected=false;
+var dataGeneration=0;
+var pendingPatch={}, remoteDebounceTimers={};
+var currentTheme="light";
+
+function escHtml(s){
+return (s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});
+}
+function debounce(fn,ms){ var t=null; return function(){ var a=arguments,c=this; clearTimeout(t); t=setTimeout(function(){fn.apply(c,a);},ms); }; }
+function todayFr(){ var d=new Date(); function p(n){return (n<10?"0":"")+n;} return p(d.getDate())+"/"+p(d.getMonth()+1)+"/"+d.getFullYear(); }
+function getISOWeek(date){
+var d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+var dayNum=d.getUTCDay()||7; d.setUTCDate(d.getUTCDate()+4-dayNum);
+var yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));
+return Math.ceil((((d-yearStart)/86400000)+1)/7);
+}
+function parseFrDate(str){
+if(!str) return null;
+var m=(str.trim()).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+if(!m) return null;
+return new Date(parseInt(m[3],10),parseInt(m[2],10)-1,parseInt(m[1],10));
+}
+function itemWeek(it){
+var d=parseFrDate(it.dateControle);
+return d?getISOWeek(d):null;
+}
+
+function applyTheme(t){
+currentTheme=(t==="dark")?"dark":"light";
+document.documentElement.setAttribute("data-theme",currentTheme);
+var btn=document.getElementById("themeToggleBtn");
+if(btn) btn.textContent=(currentTheme==="dark")?"\u2600":"\u263E";
+}
+
+function storageAvailable(){ return typeof window.storage!=="undefined" && window.storage!==null; }
+function cfgGet(key){
+return new Promise(function(resolve){
+if(storageAvailable()){
+try{ window.storage.get(key,false).then(function(r){ resolve(r&&r.value?r.value:""); }).catch(function(){resolve("");}); }
+catch(e){ resolve(""); }
+} else {
+try{ resolve(localStorage.getItem(key)||""); }catch(e){ resolve(""); }
+}
+});
+}
+function cfgSet(key,val){
+if(storageAvailable()){ try{ window.storage.set(key,val,false).catch(function(){}); }catch(e){} }
+else { try{ localStorage.setItem(key,val); }catch(e){} }
+}
+
+function buildSeed(){
+var out = [];
+var tranches = ["1", "2", "3", "4"];
+SEED_CRISE.forEach(function(row){
+tranches.forEach(function(t){
+out.push({
+id: t + "|" + row[0] + "|" + row[1],
+tranche: t,
+batiment: row[0],
+local: row[1],
+statutCalo: "a_controler", raisonCalo: "",
+statutSismique: "a_controler", raisonSismique: "",
+dateControle: "", controlledBy: "", updatedAt: Date.now()
+});
+});
+});
+return out;
+}
+
+function findItem(id){ for(var i=0;i<items.length;i++) if(items[i].id===id) return items[i]; return null; }
+
+function renameBuilding(oldName, newName){
+oldName=(oldName||"").trim(); newName=(newName||"").trim();
+if(!oldName || !newName) return Promise.resolve({count:0, error:"empty"});
+
+if(remoteConnected){
+return remotePost({action:"renameBuilding", oldName:oldName, newName:newName}).then(function(res){
+if(res && res.ok!==false && res.items){
+items=applyPendingPatches(res.items);
+render();
+return {count: res.count||0};
+}
+return {count:0, error:true};
+}).catch(function(){ return {count:0, error:true}; });
+}
+var toRename = items.filter(function(it){ return it.batiment===oldName; });
+toRename.forEach(function(it){ it.batiment=newName; it.id=(it.tranche||"1")+"|"+newName+"|"+it.local; });
+saveDataLocal(); render();
+return Promise.resolve({count:toRename.length});
+}
+
+function mapImportStatusCrise(raw){
+raw=(raw||"").trim().toLowerCase();
+if(raw==="conforme") return "conforme";
+if(raw==="non conforme") return "non_conforme";
+return "a_controler";
+}
+
+function parseImportTextCrise(text){
+var lines=text.split(/\r?\n/).filter(function(l){return l.trim().length>0;});
+var out=[];
+var tranches = ["1", "2", "3", "4"];
+
+for(var i=0;i<lines.length;i++){
+var cols=lines[i].split("\t");
+if(cols.length<2) continue;
+
+var col0 = (cols[0]||"").trim();
+var hasTrancheCol = /^[1-4]$/.test(col0);
+
+var tTarget = hasTrancheCol ? col0 : null;
+var batiment = (cols[hasTrancheCol ? 1 : 0] || "").trim();
+var local = (cols[hasTrancheCol ? 2 : 1] || "").trim();
+
+if(!batiment || !local) continue;
+if(i===0 && /^b[aâ]timent$/i.test(batiment)) continue;
+
+var statutCalo="a_controler", raisonCalo="", statutSismique="a_controler", raisonSismique="";
+var offset = hasTrancheCol ? 1 : 0;
+if(cols.length >= 4 + offset){
+statutCalo=mapImportStatusCrise(cols[2 + offset]);
+statutSismique=mapImportStatusCrise(cols[3 + offset]);
+var raisonBrute=(cols[4 + offset]||"").trim();
+if(raisonBrute){
+raisonBrute.split(" / ").forEach(function(part){
+part=part.trim();
+if(/^calo\s*:/i.test(part)) raisonCalo=part.replace(/^calo\s*:/i,"").trim();
+else if(/^s[ei]isme\s*:/i.test(part)) raisonSismique=part.replace(/^s[ei]isme\s*:/i,"").trim();
+});
+if(!raisonCalo && !raisonSismique){
+if(statutCalo==="non_conforme") raisonCalo=raisonBrute;
+else if(statutSismique==="non_conforme") raisonSismique=raisonBrute;
+}
+}
+}
+
+var targetList = tTarget ? [tTarget] : tranches;
+
+targetList.forEach(function(t){
+out.push({
+id: t + "|" + batiment + "|" + local,
+tranche: t,
+batiment: batiment,
+local: local,
+statutCalo: statutCalo,
+raisonCalo: raisonCalo,
+statutSismique: statutSismique,
+raisonSismique: raisonSismique,
+dateControle: "", controlledBy: "", updatedAt: Date.now()
+});
+});
+}
+return out;
+}
+
+function mergeImportCrise(parsedList){
+if(remoteConnected){
+var beforeIds={}; items.forEach(function(it){beforeIds[it.id]=true;});
+++dataGeneration;
+return remotePost({action:"merge", items:parsedList}).then(function(res){
+var added=0, updated=0;
+parsedList.forEach(function(p){ if(beforeIds[p.id]) updated++; else added++; });
+if(res && res.items){ items=applyPendingPatches(res.items); }
+render();
+return {added:added, updated:updated};
+}).catch(function(){ return {added:0, updated:0, error:true}; });
+}
+var added=0, updated=0;
+parsedList.forEach(function(p){
+var existing=findItem(p.id);
+if(existing){
+existing.batiment=p.batiment; existing.local=p.local; existing.tranche=p.tranche;
+if(existing.statutCalo==="a_controler" && p.statutCalo!=="a_controler"){
+existing.statutCalo=p.statutCalo; existing.raisonCalo=p.raisonCalo;
+}
+if(existing.statutSismique==="a_controler" && p.statutSismique!=="a_controler"){
+existing.statutSismique=p.statutSismique; existing.raisonSismique=p.raisonSismique;
+}
+existing.updatedAt=Date.now();
+updated++;
+} else {
+items.push(p); added++;
+}
+});
+saveDataLocal(); render();
+return Promise.resolve({added:added,updated:updated});
+}
+
+function remoteGet(){
+var url=remoteUrl+(remoteUrl.indexOf("?")>=0?"&":"?")+"app=crise&api=1&passcode="+encodeURIComponent(remotePasscode)+"&_="+Date.now();
+return fetch(url).then(function(r){ return r.json(); });
+}
+function remotePost(payload){
+payload=Object.assign({app:"crise",passcode:remotePasscode},payload);
+return fetch(remoteUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)})
+.then(function(r){ return r.json(); });
+}
+function updateConnBadge(){
+var el=document.getElementById("connStatus"); if(!el) return;
+el.textContent = remoteConnected ? "Connecté — partagé avec vos collègues." :
+"Connexion en cours ou indisponible — vérifiez votre réseau, puis appuyez sur « Actualiser ».";
+el.style.color = remoteConnected ? "var(--text-success)" : "var(--text-dim)";
+}
+function connectRemote(showMsg){
+var msgEl=document.getElementById("connMsg");
+if(!remoteUrl){ if(showMsg) flashMsg(msgEl,"Renseignez d'abord l'URL et le code d'accès.",false); return Promise.resolve(); }
+var myGen=++dataGeneration;
+return remoteGet().then(function(res){
+if(myGen!==dataGeneration) return;
+if(res && res.ok!==false){
+items=applyPendingPatches(res.items||[]);
+remoteConnected=true; updateConnBadge(); render();
+if(showMsg) flashMsg(msgEl,"Connecté — "+items.length+" local(aux) reçu(s).",true);
+} else {
+remoteConnected=false; updateConnBadge();
+if(showMsg) flashMsg(msgEl,"Échec : URL ou code d'accès incorrect.",false);
+}
+}).catch(function(){
+if(myGen!==dataGeneration) return;
+remoteConnected=false; updateConnBadge();
+if(showMsg) flashMsg(msgEl,"Impossible de joindre le serveur.",false);
+});
+}
+function applyPendingPatches(arr){
+Object.keys(pendingPatch).forEach(function(id){
+for(var i=0;i<arr.length;i++){ if(arr[i].id===id){ Object.assign(arr[i],pendingPatch[id]); break; } }
+});
+return arr;
+}
+function savePendingPatches(){ cfgSet("crise-pending-patches", JSON.stringify(pendingPatch)); }
+function sendPatch(id){
+var toSend=Object.assign({},pendingPatch[id]);
+if(!toSend || Object.keys(toSend).length===0) return Promise.resolve();
+++dataGeneration;
+return remotePost({action:"patchItem",id:id,patch:toSend}).then(function(res){
+if(pendingPatch[id] && JSON.stringify(pendingPatch[id])===JSON.stringify(toSend)){ delete pendingPatch[id]; savePendingPatches(); }
+if(res && res.items){ items=applyPendingPatches(res.items); if(!isTextareaFocused()) render(); }
+}).catch(function(){});
+}
+function flushPendingPatches(){
+var ids=Object.keys(pendingPatch);
+if(ids.length===0) return Promise.resolve();
+return Promise.all(ids.map(sendPatch)).then(function(){ render(); });
+}
+function isTextareaFocused(){ var a=document.activeElement; return !!(a && a.tagName==="TEXTAREA"); }
+
+function saveDataLocal(){
+var payload=JSON.stringify({items:items});
+if(storageAvailable()){
+try{ window.storage.set(STORAGE_KEY, payload, false).catch(function(){}); }catch(e){}
+} else {
+try{ localStorage.setItem(STORAGE_KEY, payload); }catch(e){}
+}
+}
+
+function updateItem(id, patch, immediate){
+var it=findItem(id); if(!it) return;
+Object.assign(it,patch); it.updatedAt=Date.now();
+if(remoteConnected){
+pendingPatch[id]=Object.assign(pendingPatch[id]||{},patch);
+savePendingPatches();
+if(immediate){
+if(remoteDebounceTimers[id]){ clearTimeout(remoteDebounceTimers[id]); delete remoteDebounceTimers[id]; }
+sendPatch(id);
+} else {
+if(remoteDebounceTimers[id]) clearTimeout(remoteDebounceTimers[id]);
+remoteDebounceTimers[id]=setTimeout(function(){ delete remoteDebounceTimers[id]; sendPatch(id); },500);
+}
+} else {
+saveDataLocal();
+}
+}
+
+function setStatus(id, field, status){
+var it=findItem(id); if(!it) return;
+var patch={};
+patch[field]=status;
+var raisonField = field==="statutCalo" ? "raisonCalo" : "raisonSismique";
+if(status!=="non_conforme"){ patch[raisonField]=""; }
+if(status!=="a_controler" && !it.dateControle) patch.dateControle=todayFr();
+var nameEl=document.getElementById("inspectorName");
+var name=nameEl?nameEl.value.trim():"";
+if(status!=="a_controler" && name) patch.controlledBy=name;
+updateItem(id,patch,true);
+render();
+}
+function resetItem(id){
+updateItem(id,{statutCalo:"a_controler",raisonCalo:"",statutSismique:"a_controler",raisonSismique:"",dateControle:"",controlledBy:""},true);
+render();
+}
+function populateDeleteWeekSelect(){
+var sel=document.getElementById("deleteWeekSelect");
+if(!sel) return;
+var weeks={};
+items.forEach(function(it){ var w=itemWeek(it); if(w!==null) weeks[w]=true; });
+var curWeekNum=getISOWeek(new Date());
+var cur=sel.value;
+sel.innerHTML='<option value="">Choisir une semaine…</option>'+Object.keys(weeks).map(Number).sort(function(a,b){return b-a;}).map(function(w){
+return '<option value="'+w+'">Semaine '+w+(w===curWeekNum?" (en cours)":"")+'</option>';
+}).join("");
+sel.value=cur;
+}
+
+function deleteWeek(weekNum){
+var candidates=items.filter(function(it){ return itemWeek(it)===weekNum; });
+var msgEl=document.getElementById("deleteWeekMsg");
+if(candidates.length===0){ flashMsg(msgEl,"Aucun local trouvé pour cette semaine.",false); return; }
+if(!confirm(candidates.length+" local(aux) de la semaine "+weekNum+" vont être supprimés définitivement.\n\nPensez à avoir exporté si besoin. Continuer ?")) return;
+var ids=candidates.map(function(it){ return it.id; });
+var idSet={}; ids.forEach(function(id){ idSet[id]=true; });
+if(remoteConnected){
+remotePost({action:"deleteItems", ids:ids}).then(function(res){
+if(res && res.items){ items=applyPendingPatches(res.items); }
+else { items=items.filter(function(it){ return !idSet[it.id]; }); }
+render(); populateDeleteWeekSelect();
+flashMsg(msgEl, ids.length+" local(aux) supprimé(s).", true);
+}).catch(function(){ flashMsg(msgEl,"Échec côté serveur — réessayez.",false); });
+} else {
+items=items.filter(function(it){ return !idSet[it.id]; });
+saveDataLocal(); render(); populateDeleteWeekSelect();
+flashMsg(msgEl, ids.length+" local(aux) supprimé(s).", true);
+}
+}
+
+function deleteAllItems(){
+var msgEl=document.getElementById("deleteAllMsg");
+if(items.length===0){ flashMsg(msgEl,"Il n'y a déjà plus rien à supprimer.",true); return; }
+if(!confirm("Supprimer DÉFINITIVEMENT les "+items.length+" locaux, toutes semaines confondues ?\n\nCette action est irréversible. Avez-vous exporté si besoin ?")) return;
+if(!confirm("Dernière confirmation : tout sera effacé, y compris pour vos collègues connectés. Continuer ?")) return;
+
+Object.keys(remoteDebounceTimers).forEach(function(id){ clearTimeout(remoteDebounceTimers[id]); });
+pendingPatch={}; remoteDebounceTimers={};
+savePendingPatches();
+
+if(remoteConnected){
+remotePost({action:"replaceAll", items:[]}).then(function(res){
+items=(res && res.items)?res.items:[];
+render();
+flashMsg(msgEl,"Tous les locaux ont été supprimés.",true);
+}).catch(function(){ flashMsg(msgEl,"Échec côté serveur — réessayez.",false); });
+} else {
+items=[];
+saveDataLocal(); render();
+flashMsg(msgEl,"Tous les locaux ont été supprimés.",true);
+}
+}
+
+function resetAll(){
+items.forEach(function(it){
+it.statutCalo="a_controler"; it.raisonCalo=""; it.statutSismique="a_controler"; it.raisonSismique="";
+it.dateControle=""; it.controlledBy=""; it.updatedAt=Date.now();
+});
+if(remoteConnected){
+return remotePost({action:"replaceAll",items:items}).then(function(res){
+if(res && res.items){ items=res.items; } render();
+}).catch(function(){ render(); });
+}
+saveDataLocal(); render(); return Promise.resolve();
+}
+
+function pireStatus(it){
+return (it.statutCalo==="non_conforme"||it.statutSismique==="non_conforme") ? "non_conforme"
+: (it.statutCalo==="a_controler"||it.statutSismique==="a_controler") ? "a_controler" : "conforme";
+}
+
+function getCountsBase(){
+var term=searchTerm.trim().toLowerCase();
+return items.filter(function(it){
+if(filterTranche && (it.tranche || "1") !== filterTranche) return false;
+if(filterBuilding && it.batiment!==filterBuilding) return false;
+if(filterWeek!==""){
+var w=itemWeek(it);
+if(w!==null && w!==parseInt(filterWeek,10)) return false;
+}
+if(term){
+var hay=(it.batiment+" "+it.local).toLowerCase();
+if(hay.indexOf(term)===-1) return false;
+}
+return true;
+});
+}
+
+function getFiltered(){
+return getCountsBase().filter(function(it){
+if(filterStatus && pireStatus(it)!==filterStatus) return false;
+return true;
+}).sort(function(a,b){
+if(a.batiment!==b.batiment) return a.batiment.localeCompare(b.batiment);
+return a.local.localeCompare(b.local);
+});
+}
+
+function populateFilterOptions(){
+var buildings={}, weeks={};
+items.forEach(function(it){
+if(!filterTranche || (it.tranche || "1") === filterTranche){
+buildings[it.batiment]=true;
+var w=itemWeek(it); if(w!==null) weeks[w]=true;
+}
+});
+var bSel=document.getElementById("buildingFilter"), wSel=document.getElementById("weekFilter");
+var curB=bSel.value, curW=wSel.value;
+bSel.innerHTML='<option value="">Tous les bâtiments</option>'+Object.keys(buildings).sort().map(function(b){
+return '<option value="'+escHtml(b)+'">'+escHtml(b)+'</option>';
+}).join("");
+var curWeekNum=getISOWeek(new Date());
+wSel.innerHTML='<option value="">Toutes les semaines</option>'+Object.keys(weeks).map(Number).sort(function(a,b){return b-a;}).map(function(w){
+return '<option value="'+w+'">Semaine '+w+(w===curWeekNum?" (en cours)":"")+'</option>';
+}).join("");
+bSel.value=curB; wSel.value=curW;
+}
+
+function renderStats(){
+var baseSet=getCountsBase();
+var counts={a_controler:0,conforme:0,non_conforme:0};
+baseSet.forEach(function(it){
+counts[pireStatus(it)]=(counts[pireStatus(it)]||0)+1;
+});
+var filtered=getFiltered();
+document.getElementById("headerSub").textContent=filtered.length+" local(aux) affiché(s) — "+counts.a_controler+" à contrôler";
+var row=document.getElementById("statsRow");
+row.innerHTML =
+'<div class="chip'+(!filterStatus?' active':'')+'" data-action="filter-status" data-status="">Total <b>'+baseSet.length+'</b></div>'+
+'<div class="chip'+(filterStatus==="a_controler"?' active':'')+'" data-action="filter-status" data-status="a_controler"><span style="color:var(--c-acontroler)">À contrôler</span> <b>'+counts.a_controler+'</b></div>'+
+'<div class="chip'+(filterStatus==="non_conforme"?' active':'')+'" data-action="filter-status" data-status="non_conforme"><span style="color:var(--c-nonconforme)">Non conforme</span> <b>'+counts.non_conforme+'</b></div>'+
+'<div class="chip'+(filterStatus==="conforme"?' active':'')+'" data-action="filter-status" data-status="conforme"><span style="color:var(--c-conforme)">Conforme</span> <b>'+counts.conforme+'</b></div>';
+
+var sg=document.getElementById("statGrid");
+if(sg){
+sg.innerHTML =
+'<div class="stat-box"><div class="n">'+baseSet.length+'</div><div class="l">Locaux (Tranche '+filterTranche+')</div></div>'+
+'<div class="stat-box"><div class="n" style="color:var(--c-nonconforme)">'+counts.non_conforme+'</div><div class="l">Non conformes</div></div>';
+}
+}
+
+function statusButtons(it, field, label){
+var val = it[field];
+var raisonField = field==="statutCalo" ? "raisonCalo" : "raisonSismique";
+var html = '<div class="section-label">'+label+'</div><div class="status-row">'+
+["conforme","non_conforme"].map(function(s){
+return '<button class="status-btn'+(val===s?' on st-'+s:'')+'" data-action="set-status" data-id="'+it.id+'" data-field="'+field+'" data-status="'+s+'">'+STATUS_LABEL[s]+'</button>';
+}).join("");
+html += '</div>';
+if(val==="non_conforme"){
+html += '<textarea class="reason" data-action="set-reason" data-id="'+it.id+'" data-field="'+raisonField+'" placeholder="Motif…">'+escHtml(it[raisonField])+'</textarea>';
+}
+return html;
+}
+
+function cardHtml(it){
+return '<div class="card">'+
+'<div class="card-head"><div class="card-local">'+escHtml(it.local)+'</div><div class="card-bat">Tranche '+escHtml(it.tranche||"1")+' — '+escHtml(it.batiment)+'</div></div>'+
+'<div class="section">'+statusButtons(it,"statutCalo","Charge calo / incendie")+'</div>'+
+'<div class="section">'+statusButtons(it,"statutSismique","Risque séisme / agression")+'</div>'+
+'<div class="card-foot">'+
+'<div class="foot-info">'+(it.dateControle?"Contrôlé le "+escHtml(it.dateControle)+(it.controlledBy?" par "+escHtml(it.controlledBy):""):"Pas encore contrôlé")+'</div>'+
+(it.dateControle?'<button class="reset-btn" data-action="reset-item" data-id="'+it.id+'">réinitialiser</button>':'')+
+'</div>'+
+'</div>';
+}
+
+function render(){
+populateFilterOptions();
+renderStats();
+var filtered=getFiltered();
+var list=document.getElementById("list");
+list.innerHTML = filtered.length===0 ? '<div class="empty">Aucun local ne correspond à ces filtres.</div>' : filtered.map(cardHtml).join("");
+}
+
+var EXPORT_HEADER=["Tranche","Bâtiment","Local","Charge Calo / incendie","Risque séisme/agression","Raison de la non-conformité"];
+function toAscii(s){
+s=(s||"").toString();
+s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+s=s.replace(/²/g,"2").replace(/°/g,"").replace(/[«»]/g,'"').replace(/[’‘]/g,"'").replace(/[—–]/g,"-");
+s=s.replace(/[^\x00-\x7F]/g,"");
+return s;
+}
+function buildExportTsv(){
+var rows=[EXPORT_HEADER.map(toAscii).join("\t")];
+items.forEach(function(it){
+var statutCaloTxt = it.statutCalo==="a_controler" ? "" : STATUS_LABEL[it.statutCalo];
+var statutSismiqueTxt = it.statutSismique==="a_controler" ? "" : STATUS_LABEL[it.statutSismique];
+var raisons=[];
+if(it.statutCalo==="non_conforme" && it.raisonCalo) raisons.push("Calo: "+it.raisonCalo);
+if(it.statutSismique==="non_conforme" && it.raisonSismique) raisons.push("Seisme: "+it.raisonSismique);
+var raisonCombinee = raisons.join(" / ");
+rows.push([it.tranche||"1",it.batiment,it.local,statutCaloTxt,statutSismiqueTxt,raisonCombinee]
+.map(function(v){ return toAscii(v).replace(/\t/g," ").replace(/\n/g," "); }).join("\t"));
+});
+return rows.join("\n");
+}
+function flashMsg(el,text,ok){ el.textContent=text; el.className="msg show "+(ok?"ok":"err"); setTimeout(function(){el.className="msg";},4000); }
+
+document.addEventListener("click", function(e){
+var t=e.target.closest("[data-action]"); if(!t) return;
+var action=t.getAttribute("data-action");
+
+if(action==="open-tools"){ document.getElementById("toolsOverlay").classList.remove("hidden"); populateDeleteWeekSelect(); }
+else if(action==="filter-status"){
+var st=t.getAttribute("data-status");
+filterStatus = (filterStatus===st) ? "" : st;
+render();
+}
+else if(action==="close-tools"){ document.getElementById("toolsOverlay").classList.add("hidden"); }
+else if(action==="goto-page"){
+var pageDest=t.getAttribute("data-page");
+location.href = pageDest==="crise" ? "crise.html" : "index.html";
+}
+else if(action==="toggle-theme"){
+var next=currentTheme==="dark"?"light":"dark"; applyTheme(next); cfgSet("theme",next);
+}
+else if(action==="set-status"){
+setStatus(t.getAttribute("data-id"), t.getAttribute("data-field"), t.getAttribute("data-status"));
+}
+else if(action==="reset-item"){ resetItem(t.getAttribute("data-id")); }
+else if(action==="do-rename-building"){
+var oldN=document.getElementById("renameOldInput").value;
+var newN=document.getElementById("renameNewInput").value;
+var msgElR=document.getElementById("renameMsg");
+renameBuilding(oldN,newN).then(function(res){
+if(res.error){ flashMsg(msgElR,"Échec — réessayez.",false); return; }
+if(res.count===0){ flashMsg(msgElR,"Aucun local trouvé avec ce nom.",false); return; }
+document.getElementById("renameOldInput").value="";
+document.getElementById("renameNewInput").value="";
+flashMsg(msgElR, res.count+" local(aux) renommé(s).", true);
+});
+}
+else if(action==="do-import"){
+var ta=document.getElementById("importText");
+var msgEl3=document.getElementById("importMsg");
+var parsed=parseImportTextCrise(ta.value);
+if(parsed.length===0){
+flashMsg(msgEl3,"Aucune ligne reconnue. Vérifiez que le texte collé contient bien Bâtiment et Local séparés par une tabulation.",false);
+return;
+}
+mergeImportCrise(parsed).then(function(res){
+ta.value="";
+if(res.error){ flashMsg(msgEl3,"Import local effectué, mais l'envoi au serveur a échoué — réessayez « Actualiser ».",false); return; }
+flashMsg(msgEl3, res.added+" local(aux) ajouté(s), "+res.updated+" mis à jour.", true);
+});
+}
+else if(action==="copy-export"){
+var tsv=buildExportTsv(); var msgEl=document.getElementById("exportMsg");
+if(navigator.clipboard && navigator.clipboard.writeText){
+navigator.clipboard.writeText(tsv).then(function(){ flashMsg(msgEl,"Tableau copié.",true); })
+.catch(function(){ flashMsg(msgEl,"Échec de la copie — utilisez Télécharger.",false); });
+} else { flashMsg(msgEl,"Copie indisponible — utilisez Télécharger.",false); }
+}
+else if(action==="download-export"){
+var tsv2=buildExportTsv();
+var blob=new Blob([tsv2],{type:"text/tab-separated-values;charset=utf-8"});
+var url=URL.createObjectURL(blob); var a=document.createElement("a");
+var d=new Date(); function p(n){return (n<10?"0":"")+n;}
+a.href=url; a.download="locaux-crise-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".csv";
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
+setTimeout(function(){URL.revokeObjectURL(url);},2000);
+flashMsg(document.getElementById("exportMsg"),"Fichier téléchargé.",true);
+}
+else if(action==="delete-week"){
+var wSel=document.getElementById("deleteWeekSelect");
+var wVal=wSel?wSel.value:"";
+if(!wVal){ flashMsg(document.getElementById("deleteWeekMsg"),"Choisissez d'abord une semaine.",false); return; }
+deleteWeek(parseInt(wVal,10));
+}
+else if(action==="delete-all"){
+deleteAllItems();
+}
+else if(action==="reset-all"){
+if(confirm("Repasser tous les locaux en « à contrôler » ? Pensez à avoir exporté avant.")){
+resetAll();
+document.getElementById("toolsOverlay").classList.add("hidden");
+}
+}
+else if(action==="remote-refresh"){
+connectRemote(true);
+}
+});
+
+document.addEventListener("input", function(e){
+if(e.target.getAttribute && e.target.getAttribute("data-action")==="set-reason"){
+var id=e.target.getAttribute("data-id"), field=e.target.getAttribute("data-field");
+var patch={}; patch[field]=e.target.value;
+updateItem(id,patch);
+}
+});
+document.addEventListener("focusout", function(e){
+if(e.target && e.target.getAttribute && e.target.getAttribute("data-action")==="set-reason") render();
+});
+
+document.getElementById("searchInput").addEventListener("input", debounce(function(e){ searchTerm=e.target.value; render(); },200));
+document.getElementById("trancheFilter").addEventListener("change", function(e){ filterTranche=e.target.value; render(); });
+document.getElementById("buildingFilter").addEventListener("change", function(e){ filterBuilding=e.target.value; render(); });
+document.getElementById("weekFilter").addEventListener("change", function(e){ filterWeek=e.target.value; render(); });
+document.getElementById("inspectorName").addEventListener("change", function(e){ cfgSet("inspector-name", e.target.value.trim()); });
+
+/* ============ Démarrage ============ */
+cfgGet("theme").then(function(t){ applyTheme(t||"light"); });
+cfgGet("inspector-name").then(function(n){ if(n) document.getElementById("inspectorName").value=n; });
+
+Promise.all([cfgGet("crise-pending-patches")]).then(function(vals){
+remoteUrl = REMOTE_URL;
+remotePasscode = REMOTE_PASSCODE;
+try{ pendingPatch = vals[0] ? (JSON.parse(vals[0])||{}) : {}; }catch(e){ pendingPatch={}; }
+
+updateConnBadge();
+connectRemote(false).then(function(){ return flushPendingPatches(); }).then(function(){ render(); });
+});
+
+window.addEventListener("beforeunload", function(e){
+if(remoteConnected && Object.keys(pendingPatch).length>0){ e.preventDefault(); e.returnValue=""; return ""; }
+});
+
+setInterval(function(){
+if(!remoteConnected) return;
+flushPendingPatches();
+if(isTextareaFocused()) return;
+var myGen=++dataGeneration;
+remoteGet().then(function(res){ if(myGen!==dataGeneration) return; if(res && res.items){ items=applyPendingPatches(res.items); render(); } }).catch(function(){});
+},20000);
+
+})();
+</script>
+</body>
+</html>
+
